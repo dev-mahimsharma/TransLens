@@ -10,6 +10,22 @@ export interface PredictionSummary {
   probability: number;
 }
 
+export interface NeuronActivation {
+  neuron_index: number;
+  pre_activation: number;
+  post_activation: number;
+}
+
+export interface TokenFFNActivations {
+  token_index: number;
+  top_neurons: NeuronActivation[];
+}
+
+export interface LayerDetailResponse {
+  layer: number;
+  ffn_activations: TokenFFNActivations[];
+}
+
 const BASE_URL = process.env.NEXT_PUBLIC_MODEL_SERVICE_URL ?? "http://localhost:8000";
 
 async function postJSON<T>(path: string, body: unknown): Promise<T> {
@@ -79,6 +95,20 @@ export const modelAdapter = {
       before_predictions: beforePredictions,
       after_predictions: afterPredictions,
       depth,
+    });
+  },
+
+  async getLayerDetail(
+    prompt: string,
+    layer: number,
+    model = "gpt2",
+    topKNeurons = 8
+  ): Promise<LayerDetailResponse> {
+    return postJSON<LayerDetailResponse>("/api/pipeline/layer_detail", {
+      prompt,
+      model,
+      layer,
+      top_k_neurons: topKNeurons,
     });
   },
 };

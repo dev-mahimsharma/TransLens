@@ -32,6 +32,9 @@ from schemas import (
     TopKPrediction,
     PipelineRunResponse,
     RecomputeResponse,
+    NeuronActivation,
+    TokenFFNActivations,
+    LayerDetailResponse,
 )
 
 MODEL_REGISTRY = {
@@ -192,6 +195,44 @@ class ModelService:
             final_logits=final_logits.tolist(),
             top_k_predictions=top_k_predictions,
         )
+
+    # ---------- Layer detail: Feed-Forward Network activations ----------
+
+    @torch.no_grad()
+    def get_layer_detail(
+        self, prompt: str, layer: int, top_k_neurons: int = 8
+    ) -> LayerDetailResponse:
+        if layer < 0 or layer >= self.num_layers:
+            raise ValueError(f"layer must be in [0, {self.num_layers})")
+
+        tokens, tokens_tensor = self.tokenize(prompt)
+        _, cache = self.model.run_with_cache(tokens_tensor)
+
+        # hook_post is the value AFTER the activation function (GELU) --
+        # what actually flows forward into the next residual add. hook_pre
+        # is included too since "how hard did this neuron fire before vs
+        # after the nonlinearity" is a genuinely useful thing to show.
+        pre = cache[f"blocks.{layer}.mlp.hook_pre"][0]    # [seq, d_mlp]
+        post = cache[f"blocks.{layer}.mlp.hook_post"][0]  # [seq, d_mlp]
+
+        activations = []
+        for i in range(len(tokens)):
+            # Rank neurons by how strongly they fired (post-activation
+            # magnitude) for this specific token -- these are the ones
+            # worth showing, out of thousands.
+            magnitudes = post[i].abs()
+            top_indices = torch.topk(magnitudes, min(top_k_neurons, magnitudes.shape[0])).indices
+            top_neurons = [
+                NeuronActivation(
+                    neuron_index=idx.item(),
+                    pre_activation=pre[i, idx].item(),
+                    post_activation=post[i, idx].item(),
+                )
+                for idx in top_indices
+            ]
+            activations.append(TokenFFNActivations(token_index=i, top_neurons=top_neurons))
+
+        return LayerDetailResponse(layer=layer, ffn_activations=activations)
 
     # ---------- Shared extraction helpers ----------
 

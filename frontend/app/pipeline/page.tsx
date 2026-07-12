@@ -11,7 +11,10 @@ import { BeforeAfterToggle } from "@/components/pipeline/BeforeAfterToggle";
 import { DepthSelector } from "@/components/pipeline/DepthSelector";
 import { TokenizationView } from "@/components/stages/tokenization/TokenizationView";
 import { EmbeddingsView } from "@/components/stages/embeddings/EmbeddingsView";
+import { PositionalEncodingView } from "@/components/stages/positional-encoding/PositionalEncodingView";
 import { AttentionView } from "@/components/stages/attention/AttentionView";
+import { FeedForwardView } from "@/components/stages/feed-forward/FeedForwardView";
+import { LogitsView } from "@/components/stages/logits/LogitsView";
 import { SamplingView } from "@/components/stages/sampling/SamplingView";
 
 export default function PipelinePage() {
@@ -52,7 +55,10 @@ export default function PipelinePage() {
       <div className="mx-auto max-w-5xl">
         {activeStage === "tokenization" && <TokenizationView />}
         {activeStage === "embeddings" && <EmbeddingsView />}
+        {activeStage === "positional_encoding" && <PositionalEncodingView />}
         {activeStage === "attention" && <AttentionView />}
+        {activeStage === "feed_forward" && <FeedForwardView />}
+        {activeStage === "logits" && <LogitsView />}
         {activeStage === "sampling" && <SamplingView />}
         {activeStage === "prompt" && <ComingSoon label="Prompt" />}
       </div>

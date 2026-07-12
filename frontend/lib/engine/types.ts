@@ -60,14 +60,20 @@ export type StageId =
   | "prompt"
   | "tokenization"
   | "embeddings"
+  | "positional_encoding"
   | "attention"
+  | "feed_forward"
+  | "logits"
   | "sampling";
 
 export const STAGE_ORDER: StageId[] = [
   "prompt",
   "tokenization",
   "embeddings",
+  "positional_encoding",
   "attention",
+  "feed_forward",
+  "logits",
   "sampling",
 ];
 
@@ -75,6 +81,9 @@ export const STAGE_LABELS: Record<StageId, string> = {
   prompt: "Prompt",
   tokenization: "Tokenization",
   embeddings: "Embeddings",
+  positional_encoding: "Positional Encoding",
   attention: "Self-Attention",
+  feed_forward: "Feed-Forward Network",
+  logits: "Logits",
   sampling: "Sampling",
 };

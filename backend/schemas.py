@@ -148,3 +148,30 @@ class ExplainRequest(BaseModel):
 
 class ExplainResponse(BaseModel):
     explanation: str
+
+
+class NeuronActivation(BaseModel):
+    neuron_index: int
+    pre_activation: float   # value before GELU
+    post_activation: float  # value after GELU -- what actually flows forward
+
+
+class TokenFFNActivations(BaseModel):
+    token_index: int
+    # Only the top-k most active neurons for this token, not all d_mlp
+    # (3072 for gpt2-small) -- full activations aren't visualizable
+    # directly, and "which neurons fired hardest" is the actually useful
+    # signal for understanding what the FFN is doing.
+    top_neurons: List[NeuronActivation]
+
+
+class LayerDetailRequest(BaseModel):
+    prompt: str = Field(..., min_length=1, max_length=512)
+    model: str = Field(default="gpt2")
+    layer: int = Field(..., ge=0)
+    top_k_neurons: int = Field(default=8, ge=1, le=50)
+
+
+class LayerDetailResponse(BaseModel):
+    layer: int
+    ffn_activations: List[TokenFFNActivations]

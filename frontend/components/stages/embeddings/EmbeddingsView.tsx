@@ -210,10 +210,10 @@ export function EmbeddingsView() {
 
       <div className="mt-12 flex justify-end">
         <button
-          onClick={() => setActiveStage("attention")}
+          onClick={() => setActiveStage("positional_encoding")}
           className="rounded-full bg-signal-cyan px-5 py-2 font-mono text-xs font-medium uppercase tracking-wider text-void transition-opacity hover:opacity-90"
         >
-          Next: Self-Attention →
+          Next: Positional Encoding →
         </button>
       </div>
     </section>

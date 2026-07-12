@@ -34,9 +34,11 @@ export function AttentionView() {
   const setActiveStage = usePipelineStore((s) => s.setActiveStage);
   const isLoading = usePipelineStore((s) => s.isLoading);
   const depth = usePipelineStore((s) => s.explanationDepth);
+  const layer = usePipelineStore((s) => s.activeLayer);
+  const setLayer = usePipelineStore((s) => s.setActiveLayer);
 
-  const [layer, setLayer] = useState(0);
   const [head, setHead] = useState(0);
+  const [viewMode, setViewMode] = useState<"single" | "all-heads">("single");
   const [selectedQuery, setSelectedQuery] = useState<number | null>(null);
   const [draftWeights, setDraftWeights] = useState<number[] | null>(null);
   const [hoveredQuery, setHoveredQuery] = useState<number | null>(null);
@@ -49,6 +51,11 @@ export function AttentionView() {
     const headData = layerData?.heads.find((h) => h.head_index === head);
     return headData?.weights ?? [];
   }, [snapshot, layer, head]);
+
+  const allHeadsPatterns = useMemo(() => {
+    const layerData = snapshot?.data.attentions.find((l) => l.layer_index === layer);
+    return layerData?.heads ?? [];
+  }, [snapshot, layer]);
 
   if (!snapshot || n === 0 || pattern.length === 0) {
     return (
@@ -99,11 +106,29 @@ export function AttentionView() {
       </div>
 
       {/* Layer / Head selectors */}
-      <div className="mb-6 flex flex-wrap gap-6">
+      <div className="mb-6 flex flex-wrap items-center gap-6">
         <LayerHeadStepper label="Layer" value={layer} max={NUM_LAYERS - 1} onChange={(v) => { setLayer(v); setSelectedQuery(null); }} />
-        <LayerHeadStepper label="Head" value={head} max={NUM_HEADS - 1} onChange={(v) => { setHead(v); setSelectedQuery(null); }} />
+        {viewMode === "single" && (
+          <LayerHeadStepper label="Head" value={head} max={NUM_HEADS - 1} onChange={(v) => { setHead(v); setSelectedQuery(null); }} />
+        )}
+        <div className="flex items-center rounded-full border border-graphite-dim bg-void-raised p-0.5">
+          {(["single", "all-heads"] as const).map((mode) => (
+            <button
+              key={mode}
+              onClick={() => { setViewMode(mode); setSelectedQuery(null); }}
+              className={`rounded-full px-3 py-1 font-mono text-[10px] uppercase tracking-wider transition-colors ${
+                viewMode === mode ? "bg-signal-cyan text-void" : "text-graphite hover:text-paper"
+              }`}
+            >
+              {mode === "single" ? "Single Head" : "All Heads"}
+            </button>
+          ))}
+        </div>
       </div>
 
+      {viewMode === "all-heads" ? (
+        <AllHeadsGrid heads={allHeadsPatterns} tokens={tokens} onSelectHead={(h) => { setHead(h); setViewMode("single"); }} />
+      ) : (
       <div className="flex flex-col gap-8 lg:flex-row">
         {/* Arc diagram */}
         <svg
@@ -252,16 +277,61 @@ export function AttentionView() {
           </AnimatePresence>
         </div>
       </div>
+      )}
 
       <div className="mt-12 flex justify-end">
         <button
-          onClick={() => setActiveStage("sampling")}
+          onClick={() => setActiveStage("feed_forward")}
           className="rounded-full bg-signal-cyan px-5 py-2 font-mono text-xs font-medium uppercase tracking-wider text-void transition-opacity hover:opacity-90"
         >
-          Next: Sampling →
+          Next: Feed-Forward Network →
         </button>
       </div>
     </section>
+  );
+}
+
+function AllHeadsGrid({
+  heads,
+  tokens,
+  onSelectHead,
+}: {
+  heads: { head_index: number; weights: number[][] }[];
+  tokens: { text: string }[];
+  onSelectHead: (head: number) => void;
+}) {
+  const n = tokens.length;
+  const cell = Math.max(4, Math.min(16, 120 / n));
+
+  return (
+    <div className="grid grid-cols-3 gap-4 sm:grid-cols-4 lg:grid-cols-6">
+      {heads.map((h) => (
+        <button
+          key={h.head_index}
+          onClick={() => onSelectHead(h.head_index)}
+          className="group rounded-lg border border-graphite-dim bg-void-raised p-2 text-left transition-colors hover:border-signal-cyan"
+        >
+          <svg viewBox={`0 0 ${n * cell} ${n * cell}`} className="w-full">
+            {h.weights.map((row, i) =>
+              row.map((w, j) => (
+                <rect
+                  key={`${i}-${j}`}
+                  x={j * cell}
+                  y={i * cell}
+                  width={cell}
+                  height={cell}
+                  fill="var(--signal-cyan)"
+                  fillOpacity={w}
+                />
+              ))
+            )}
+          </svg>
+          <p className="mt-1 font-mono text-[10px] text-graphite group-hover:text-paper">
+            Head {h.head_index}
+          </p>
+        </button>
+      ))}
+    </div>
   );
 }
 

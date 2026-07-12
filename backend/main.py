@@ -21,6 +21,8 @@ from schemas import (
     HealthResponse,
     ExplainRequest,
     ExplainResponse,
+    LayerDetailRequest,
+    LayerDetailResponse,
 )
 from model_service import ModelService, MODEL_REGISTRY
 from explanation_service import ExplanationService
@@ -103,6 +105,17 @@ def recompute_from_attention(req: RecomputeFromAttentionRequest):
             head=req.head,
             new_pattern=req.new_pattern,
             top_k=req.top_k,
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/pipeline/layer_detail", response_model=LayerDetailResponse)
+def layer_detail(req: LayerDetailRequest):
+    svc = get_service(req.model)
+    try:
+        return svc.get_layer_detail(
+            prompt=req.prompt, layer=req.layer, top_k_neurons=req.top_k_neurons
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

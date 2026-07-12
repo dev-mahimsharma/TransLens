@@ -199,10 +199,10 @@ export function SamplingView() {
 
       <div className="mt-12 flex justify-between">
         <button
-          onClick={() => setActiveStage("attention")}
+          onClick={() => setActiveStage("logits")}
           className="rounded-full border border-graphite-dim px-5 py-2 font-mono text-xs uppercase tracking-wider text-graphite hover:text-paper"
         >
-          ← Back to Attention
+          ← Back to Logits
         </button>
         <button
           onClick={handleStartOver}

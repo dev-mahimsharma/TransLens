@@ -60,6 +60,12 @@ interface PipelineState {
   // this shape, just adding more cases where it's read.
   explanationDepth: "beginner" | "developer";
 
+  // Shared across Attention and Feed-Forward Network stages so scrubbing
+  // through the transformer stack in one place moves both -- this is what
+  // makes it read as "navigating the layers" rather than two independent,
+  // coincidentally-similar controls.
+  activeLayer: number;
+
   // ---- actions ----
   setPrompt: (prompt: string) => void;
   runPipeline: (prompt: string) => Promise<void>;
@@ -68,6 +74,7 @@ interface PipelineState {
   toggleCompare: () => void;
   setCompareSnapshot: (id: string | null) => void;
   setExplanationDepth: (depth: "beginner" | "developer") => void;
+  setActiveLayer: (layer: number) => void;
 
   editEmbedding: (tokenIndex: number, newVector: number[]) => Promise<void>;
   editAttention: (layer: number, head: number, newPattern: number[][]) => Promise<void>;
@@ -99,12 +106,14 @@ export const usePipelineStore = create<PipelineState>((set, get) => ({
   compareEnabled: false,
   compareSnapshotId: null,
   explanationDepth: "beginner",
+  activeLayer: 0,
 
   setPrompt: (prompt) => set({ prompt }),
   setActiveStage: (stage) => set({ activeStage: stage }),
   toggleCompare: () => set((s) => ({ compareEnabled: !s.compareEnabled })),
   setCompareSnapshot: (id) => set({ compareSnapshotId: id, compareEnabled: true }),
   setExplanationDepth: (depth) => set({ explanationDepth: depth }),
+  setActiveLayer: (layer) => set({ activeLayer: layer }),
 
   runPipeline: async (prompt) => {
     set({ isLoading: true, error: null });
