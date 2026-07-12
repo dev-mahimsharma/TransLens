@@ -1,0 +1,38 @@
+# ===== Frontend (Next.js) =====
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/build/
+frontend/.env
+frontend/.env.local
+frontend/.env.*.local
+frontend/next-env.d.ts
+frontend/*.tsbuildinfo
+frontend/.vercel
+
+# ===== Backend (Python) =====
+backend/venv/
+backend/.venv/
+backend/__pycache__/
+backend/**/__pycache__/
+backend/*.pyc
+backend/.env
+backend/.pytest_cache/
+
+# Downloaded model weights / TransformerLens cache -- large, and
+# re-downloadable, so they don't belong in git
+backend/**/*.pt
+backend/**/*.safetensors
+.cache/
+~/.cache/huggingface/
+
+# ===== Editor / OS =====
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+
+# ===== Logs =====
+*.log
+npm-debug.log*
