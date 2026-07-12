@@ -54,6 +54,12 @@ interface PipelineState {
   // null means "fall back to the active snapshot's parent".
   compareSnapshotId: string | null;
 
+  // X-Ray Mode: how technical the explanatory text in each stage should
+  // be. Scoped to two levels for v3 (Beginner/Developer) per the reduced
+  // roadmap -- Intermediate/Advanced can slot in later without changing
+  // this shape, just adding more cases where it's read.
+  explanationDepth: "beginner" | "developer";
+
   // ---- actions ----
   setPrompt: (prompt: string) => void;
   runPipeline: (prompt: string) => Promise<void>;
@@ -61,6 +67,7 @@ interface PipelineState {
   jumpToSnapshot: (id: string) => void;
   toggleCompare: () => void;
   setCompareSnapshot: (id: string | null) => void;
+  setExplanationDepth: (depth: "beginner" | "developer") => void;
 
   editEmbedding: (tokenIndex: number, newVector: number[]) => Promise<void>;
   editAttention: (layer: number, head: number, newPattern: number[][]) => Promise<void>;
@@ -91,11 +98,13 @@ export const usePipelineStore = create<PipelineState>((set, get) => ({
   activeStage: "prompt",
   compareEnabled: false,
   compareSnapshotId: null,
+  explanationDepth: "beginner",
 
   setPrompt: (prompt) => set({ prompt }),
   setActiveStage: (stage) => set({ activeStage: stage }),
   toggleCompare: () => set((s) => ({ compareEnabled: !s.compareEnabled })),
   setCompareSnapshot: (id) => set({ compareSnapshotId: id, compareEnabled: true }),
+  setExplanationDepth: (depth) => set({ explanationDepth: depth }),
 
   runPipeline: async (prompt) => {
     set({ isLoading: true, error: null });

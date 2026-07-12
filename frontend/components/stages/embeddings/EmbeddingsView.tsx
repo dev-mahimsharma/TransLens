@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { usePipelineStore } from "@/lib/store/usePipelineStore";
 import { pca } from "@/lib/engine/Pca";
+import { STAGE_EXPLANATIONS } from "@/lib/content/explanations";
 
 const VIEW_SIZE = 560;
 const PADDING = 60;
@@ -24,6 +25,7 @@ export function EmbeddingsView() {
   const editEmbedding = usePipelineStore((s) => s.editEmbedding);
   const setActiveStage = usePipelineStore((s) => s.setActiveStage);
   const isLoading = usePipelineStore((s) => s.isLoading);
+  const depth = usePipelineStore((s) => s.explanationDepth);
   const [hovered, setHovered] = useState<number | null>(null);
   const [dragging, setDragging] = useState<number | null>(null);
 
@@ -110,10 +112,7 @@ export function EmbeddingsView() {
       <div className="mb-8">
         <h2 className="font-display text-2xl text-paper">Embeddings</h2>
         <p className="mt-2 max-w-lg text-sm text-graphite">
-          Each token becomes a 768-number vector — a point in a space where
-          nearby meanings sit close together. This view compresses that down
-          to 2 dimensions using PCA so you can see it. Drag any point to
-          actually edit its vector and watch the prediction change downstream.
+          {STAGE_EXPLANATIONS.embeddings[depth]}
         </p>
       </div>
 

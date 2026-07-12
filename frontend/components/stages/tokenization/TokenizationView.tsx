@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { usePipelineStore } from "@/lib/store/usePipelineStore";
+import { STAGE_EXPLANATIONS } from "@/lib/content/explanations";
 
 /**
  * Tokenization deep-dive. Each token is a card showing the raw text, its
@@ -18,6 +19,7 @@ import { usePipelineStore } from "@/lib/store/usePipelineStore";
 export function TokenizationView() {
   const snapshot = usePipelineStore((s) => s.activeSnapshot());
   const setActiveStage = usePipelineStore((s) => s.setActiveStage);
+  const depth = usePipelineStore((s) => s.explanationDepth);
   const [selected, setSelected] = useState<number | null>(null);
 
   if (!snapshot) return null;
@@ -28,10 +30,7 @@ export function TokenizationView() {
       <div className="mb-8">
         <h2 className="font-display text-2xl text-paper">Tokenization</h2>
         <p className="mt-2 max-w-lg text-sm text-graphite">
-          The model never sees words — it sees numbers. Your prompt was
-          split into {tokens.length} token{tokens.length === 1 ? "" : "s"},
-          each mapped to an id from a fixed vocabulary. Select a token to see
-          exactly how it was split.
+          {STAGE_EXPLANATIONS.tokenization[depth]}
         </p>
       </div>
 

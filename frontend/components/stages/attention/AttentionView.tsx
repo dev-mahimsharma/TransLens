@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { usePipelineStore } from "@/lib/store/usePipelineStore";
+import { STAGE_EXPLANATIONS } from "@/lib/content/explanations";
 
 // gpt2-small's fixed shape. If you swap in a different model later, pull
 // these from the backend response instead of hardcoding -- kept simple
@@ -32,6 +33,7 @@ export function AttentionView() {
   const editAttention = usePipelineStore((s) => s.editAttention);
   const setActiveStage = usePipelineStore((s) => s.setActiveStage);
   const isLoading = usePipelineStore((s) => s.isLoading);
+  const depth = usePipelineStore((s) => s.explanationDepth);
 
   const [layer, setLayer] = useState(0);
   const [head, setHead] = useState(0);
@@ -92,10 +94,7 @@ export function AttentionView() {
       <div className="mb-6">
         <h2 className="font-display text-2xl text-paper">Self-Attention</h2>
         <p className="mt-2 max-w-lg text-sm text-graphite">
-          This is how the model decides what to focus on. Every query token
-          (left) looks at every key token (right) and assigns it a weight —
-          thicker, brighter arcs mean stronger attention. Select a query
-          token to see and edit its exact distribution.
+          {STAGE_EXPLANATIONS.attention[depth]}
         </p>
       </div>
 

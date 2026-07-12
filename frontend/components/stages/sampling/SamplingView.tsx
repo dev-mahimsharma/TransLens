@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { usePipelineStore } from "@/lib/store/usePipelineStore";
 import { softmaxWithTemperature, weightedRandomIndex } from "@/lib/engine/sampling";
+import { STAGE_EXPLANATIONS } from "@/lib/content/explanations";
 
 /**
  * Final stage: turns logits into an actual next token. This is where
@@ -20,6 +21,7 @@ export function SamplingView() {
   const snapshot = usePipelineStore((s) => s.activeSnapshot());
   const previous = usePipelineStore((s) => s.previousSnapshot());
   const compareEnabled = usePipelineStore((s) => s.compareEnabled);
+  const depth = usePipelineStore((s) => s.explanationDepth);
   const prompt = usePipelineStore((s) => s.prompt);
   const setActiveStage = usePipelineStore((s) => s.setActiveStage);
 
@@ -69,10 +71,7 @@ export function SamplingView() {
       <div className="mb-6">
         <h2 className="font-display text-2xl text-paper">Sampling</h2>
         <p className="mt-2 max-w-lg text-sm text-graphite">
-          The model doesn&apos;t output one fixed answer — it outputs a
-          probability for every possible next token. Temperature controls
-          how confidently it commits to the top choice; Top-K controls how
-          many candidates are even considered.
+          {STAGE_EXPLANATIONS.sampling[depth]}
         </p>
       </div>
 

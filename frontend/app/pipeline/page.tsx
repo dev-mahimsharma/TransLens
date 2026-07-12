@@ -7,6 +7,7 @@ import { SignalSpine } from "@/components/pipeline/SignalSpine";
 import { VisualHistory } from "@/components/pipeline/VisualHistory";
 import { BranchSwitcher } from "@/components/pipeline/BranchSwitcher";
 import { BeforeAfterToggle } from "@/components/pipeline/BeforeAfterToggle";
+import { DepthSelector } from "@/components/pipeline/DepthSelector";
 import { TokenizationView } from "@/components/stages/tokenization/TokenizationView";
 import { EmbeddingsView } from "@/components/stages/embeddings/EmbeddingsView";
 import { AttentionView } from "@/components/stages/attention/AttentionView";
@@ -33,7 +34,10 @@ export default function PipelinePage() {
           <p className="font-mono text-xs uppercase tracking-wider text-graphite">Prompt</p>
           <p className="mt-1 font-mono text-lg text-paper">&ldquo;{prompt}&rdquo;</p>
         </div>
-        <BeforeAfterToggle />
+        <div className="flex items-center gap-3">
+          <DepthSelector />
+          <BeforeAfterToggle />
+        </div>
       </header>
 
       <div className="mx-auto max-w-5xl">
