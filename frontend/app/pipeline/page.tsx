@@ -5,6 +5,9 @@ import { useRouter } from "next/navigation";
 import { usePipelineStore } from "@/lib/store/usePipelineStore";
 import { SignalSpine } from "@/components/pipeline/SignalSpine";
 import { TokenizationView } from "@/components/stages/tokenization/TokenizationView";
+import { EmbeddingsView } from "@/components/stages/embeddings/EmbeddingsView";
+import { AttentionView } from "@/components/stages/attention/AttentionView";
+import { SamplingView } from "@/components/stages/sampling/SamplingView";
 
 export default function PipelinePage() {
   const router = useRouter();
@@ -33,9 +36,9 @@ export default function PipelinePage() {
 
       <div className="mx-auto max-w-5xl">
         {activeStage === "tokenization" && <TokenizationView />}
-        {activeStage === "embeddings" && <ComingSoon label="Embeddings" />}
-        {activeStage === "attention" && <ComingSoon label="Self-Attention" />}
-        {activeStage === "sampling" && <ComingSoon label="Sampling" />}
+        {activeStage === "embeddings" && <EmbeddingsView />}
+        {activeStage === "attention" && <AttentionView />}
+        {activeStage === "sampling" && <SamplingView />}
         {activeStage === "prompt" && <ComingSoon label="Prompt" />}
       </div>
     </main>
