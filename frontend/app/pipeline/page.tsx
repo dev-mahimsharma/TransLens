@@ -4,6 +4,9 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { usePipelineStore } from "@/lib/store/usePipelineStore";
 import { SignalSpine } from "@/components/pipeline/SignalSpine";
+import { VisualHistory } from "@/components/pipeline/VisualHistory";
+import { BranchSwitcher } from "@/components/pipeline/BranchSwitcher";
+import { BeforeAfterToggle } from "@/components/pipeline/BeforeAfterToggle";
 import { TokenizationView } from "@/components/stages/tokenization/TokenizationView";
 import { EmbeddingsView } from "@/components/stages/embeddings/EmbeddingsView";
 import { AttentionView } from "@/components/stages/attention/AttentionView";
@@ -11,7 +14,7 @@ import { SamplingView } from "@/components/stages/sampling/SamplingView";
 
 export default function PipelinePage() {
   const router = useRouter();
-  const hasRun = usePipelineStore((s) => s.snapshots.length > 0);
+  const hasRun = usePipelineStore((s) => s.rootId !== null);
   const activeStage = usePipelineStore((s) => s.activeStage);
   const prompt = usePipelineStore((s) => s.prompt);
 
@@ -25,14 +28,20 @@ export default function PipelinePage() {
 
   return (
     <main className="min-h-screen px-6 py-10 sm:px-12">
-      <header className="mx-auto max-w-5xl">
-        <p className="font-mono text-xs uppercase tracking-wider text-graphite">Prompt</p>
-        <p className="mt-1 font-mono text-lg text-paper">&ldquo;{prompt}&rdquo;</p>
+      <header className="mx-auto flex max-w-5xl items-start justify-between">
+        <div>
+          <p className="font-mono text-xs uppercase tracking-wider text-graphite">Prompt</p>
+          <p className="mt-1 font-mono text-lg text-paper">&ldquo;{prompt}&rdquo;</p>
+        </div>
+        <BeforeAfterToggle />
       </header>
 
       <div className="mx-auto max-w-5xl">
         <SignalSpine />
       </div>
+
+      <VisualHistory />
+      <BranchSwitcher />
 
       <div className="mx-auto max-w-5xl">
         {activeStage === "tokenization" && <TokenizationView />}

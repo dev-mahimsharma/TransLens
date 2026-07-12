@@ -19,6 +19,8 @@ const PADDING = 60;
  */
 export function EmbeddingsView() {
   const snapshot = usePipelineStore((s) => s.activeSnapshot());
+  const previous = usePipelineStore((s) => s.previousSnapshot());
+  const compareEnabled = usePipelineStore((s) => s.compareEnabled);
   const editEmbedding = usePipelineStore((s) => s.editEmbedding);
   const setActiveStage = usePipelineStore((s) => s.setActiveStage);
   const isLoading = usePipelineStore((s) => s.isLoading);
@@ -33,24 +35,53 @@ export function EmbeddingsView() {
     return pca(vectors, 2);
   }, [embeddings]);
 
-  const screenPoints = useMemo(() => {
-    if (!projection) return [];
+  const layout = useMemo(() => {
+    if (!projection) return null;
     const xs = projection.points.map((p) => p[0]);
     const ys = projection.points.map((p) => p[1]);
     const minX = Math.min(...xs), maxX = Math.max(...xs);
     const minY = Math.min(...ys), maxY = Math.max(...ys);
-    const rangeX = maxX - minX || 1;
-    const rangeY = maxY - minY || 1;
-    const plotSize = VIEW_SIZE - PADDING * 2;
-
-    return projection.points.map(([x, y]) => ({
-      screenX: PADDING + ((x - minX) / rangeX) * plotSize,
-      // flip Y so "up" in data space is up on screen
-      screenY: VIEW_SIZE - PADDING - ((y - minY) / rangeY) * plotSize,
-      scaleX: plotSize / rangeX,
-      scaleY: plotSize / rangeY,
-    }));
+    return {
+      minX,
+      minY,
+      rangeX: maxX - minX || 1,
+      rangeY: maxY - minY || 1,
+      plotSize: VIEW_SIZE - PADDING * 2,
+    };
   }, [projection]);
+
+  function toScreen(x: number, y: number) {
+    if (!layout) return { screenX: 0, screenY: 0 };
+    return {
+      screenX: PADDING + ((x - layout.minX) / layout.rangeX) * layout.plotSize,
+      screenY: VIEW_SIZE - PADDING - ((y - layout.minY) / layout.rangeY) * layout.plotSize,
+    };
+  }
+
+  const screenPoints = useMemo(() => {
+    if (!projection || !layout) return [];
+    return projection.points.map(([x, y]) => ({
+      ...toScreen(x, y),
+      scaleX: layout.plotSize / layout.rangeX,
+      scaleY: layout.plotSize / layout.rangeY,
+    }));
+  }, [projection, layout]);
+
+  // Ghost points: previous snapshot's embeddings, projected through the
+  // CURRENT snapshot's PCA basis (not their own fresh PCA) -- this is
+  // essential, otherwise the two projections would use different
+  // rotations and a "before" position would be meaningless to compare
+  // against "after". Projecting onto the same axes keeps the comparison honest.
+  const ghostScreenPoints = useMemo(() => {
+    if (!compareEnabled || !previous || !projection || !layout) return null;
+    return previous.data.embeddings.map((e) => {
+      const centered = e.combined.map((v, j) => v - projection.mean[j]);
+      const dot = (a: number[], b: number[]) => a.reduce((s, v, i) => s + v * b[i], 0);
+      const x = dot(centered, projection.componentDirections[0] ?? []);
+      const y = dot(centered, projection.componentDirections[1] ?? []);
+      return toScreen(x, y);
+    });
+  }, [compareEnabled, previous, projection, layout]);
 
   if (!snapshot || !projection) {
     return (
@@ -101,6 +132,28 @@ export function EmbeddingsView() {
             PC2
           </text>
 
+          {/* Ghost trail: previous position -> current position */}
+          {ghostScreenPoints &&
+            tokens.map((token, i) => {
+              const from = ghostScreenPoints[i];
+              const to = screenPoints[i];
+              if (!from || !to) return null;
+              return (
+                <g key={`ghost-${token.index}`}>
+                  <line
+                    x1={from.screenX}
+                    y1={from.screenY}
+                    x2={to.screenX}
+                    y2={to.screenY}
+                    stroke="var(--graphite)"
+                    strokeWidth={1}
+                    strokeDasharray="3 3"
+                  />
+                  <circle cx={from.screenX} cy={from.screenY} r={4} fill="none" stroke="var(--graphite)" strokeWidth={1.5} />
+                </g>
+              );
+            })}
+
           {tokens.map((token, i) => {
             const pt = screenPoints[i];
             if (!pt) return null;
@@ -146,6 +199,9 @@ export function EmbeddingsView() {
             <li>• Distance between dots roughly reflects how differently the model represents them at this stage.</li>
             <li>• Drag a dot and release — the real 768-dim vector is edited along the same directions you see, and the whole downstream pipeline recomputes.</li>
             <li className="text-signal-violet">• Violet means you edited it. Cyan means it&apos;s the model&apos;s original value.</li>
+            {compareEnabled && ghostScreenPoints && (
+              <li className="text-graphite">• Dashed lines and hollow circles show each token&apos;s position before your last edit.</li>
+            )}
           </ul>
           {isLoading && (
             <p className="mt-4 font-mono text-xs text-signal-cyan">Recomputing downstream…</p>

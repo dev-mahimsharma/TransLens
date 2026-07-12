@@ -16,7 +16,7 @@ import { cn } from "@/lib/utils";
 export function SignalSpine() {
   const activeStage = usePipelineStore((s) => s.activeStage);
   const setActiveStage = usePipelineStore((s) => s.setActiveStage);
-  const hasRun = usePipelineStore((s) => s.snapshots.length > 0);
+  const hasRun = usePipelineStore((s) => s.rootId !== null);
   const isLoading = usePipelineStore((s) => s.isLoading);
 
   const activeIndex = STAGE_ORDER.indexOf(activeStage);

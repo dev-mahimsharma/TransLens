@@ -18,6 +18,8 @@ import { softmaxWithTemperature, weightedRandomIndex } from "@/lib/engine/sampli
 export function SamplingView() {
   const router = useRouter();
   const snapshot = usePipelineStore((s) => s.activeSnapshot());
+  const previous = usePipelineStore((s) => s.previousSnapshot());
+  const compareEnabled = usePipelineStore((s) => s.compareEnabled);
   const prompt = usePipelineStore((s) => s.prompt);
   const setActiveStage = usePipelineStore((s) => s.setActiveStage);
 
@@ -34,6 +36,16 @@ export function SamplingView() {
     () => softmaxWithTemperature(visible.map((p) => p.logit), temperature),
     [visible, temperature]
   );
+
+  // Ghost probabilities: the SAME candidate tokens' probability in the
+  // previous snapshot, matched by token id -- shows "here's what this
+  // token's chances were before your edit" directly behind the current bar.
+  const ghostByTokenId = useMemo(() => {
+    if (!compareEnabled || !previous) return null;
+    const map = new Map<number, number>();
+    for (const p of previous.data.top_k_predictions) map.set(p.token_id, p.probability);
+    return map;
+  }, [compareEnabled, previous]);
 
   if (!snapshot || allPredictions.length === 0) {
     return (
@@ -107,32 +119,49 @@ export function SamplingView() {
 
       {/* Probability bars */}
       <div className="max-w-xl space-y-2">
-        {visible.map((pred, i) => (
-          <div key={pred.token_id}>
-            <div className="mb-1 flex items-center justify-between">
-              <span
-                className={`font-mono text-sm ${
-                  sampled?.index === i ? "text-signal-violet" : "text-paper"
-                }`}
-              >
-                {pred.token_text.trim() || "␣"}
-              </span>
-              <span className="font-mono text-xs text-graphite">
-                {(reweighted[i] * 100).toFixed(1)}%
-              </span>
+        {compareEnabled && ghostByTokenId && (
+          <p className="mb-1 font-mono text-[10px] text-graphite">
+            Faint bars show probabilities before your last edit
+          </p>
+        )}
+        {visible.map((pred, i) => {
+          const ghostProb = ghostByTokenId?.get(pred.token_id) ?? null;
+          return (
+            <div key={pred.token_id}>
+              <div className="mb-1 flex items-center justify-between">
+                <span
+                  className={`font-mono text-sm ${
+                    sampled?.index === i ? "text-signal-violet" : "text-paper"
+                  }`}
+                >
+                  {pred.token_text.trim() || "␣"}
+                </span>
+                <span className="font-mono text-xs text-graphite">
+                  {(reweighted[i] * 100).toFixed(1)}%
+                  {ghostProb !== null && (
+                    <span className="ml-2 text-graphite/60">was {(ghostProb * 100).toFixed(1)}%</span>
+                  )}
+                </span>
+              </div>
+              <div className="relative h-2 overflow-hidden rounded-full bg-void-raised">
+                {ghostProb !== null && (
+                  <div
+                    className="absolute inset-y-0 left-0 rounded-full border border-graphite/50"
+                    style={{ width: `${ghostProb * 100}%` }}
+                  />
+                )}
+                <motion.div
+                  className={`relative h-full rounded-full ${
+                    sampled?.index === i ? "bg-signal-violet" : "bg-signal-cyan"
+                  }`}
+                  initial={false}
+                  animate={{ width: `${reweighted[i] * 100}%` }}
+                  transition={{ duration: 0.3, ease: "easeOut" }}
+                />
+              </div>
             </div>
-            <div className="h-2 overflow-hidden rounded-full bg-void-raised">
-              <motion.div
-                className={`h-full rounded-full ${
-                  sampled?.index === i ? "bg-signal-violet" : "bg-signal-cyan"
-                }`}
-                initial={false}
-                animate={{ width: `${reweighted[i] * 100}%` }}
-                transition={{ duration: 0.3, ease: "easeOut" }}
-              />
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Sample action + output */}
