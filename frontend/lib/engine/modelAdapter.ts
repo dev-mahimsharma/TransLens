@@ -5,6 +5,11 @@
 
 import type { PipelineRunResponse, RecomputeResponse } from "./types";
 
+export interface PredictionSummary {
+  token_text: string;
+  probability: number;
+}
+
 const BASE_URL = process.env.NEXT_PUBLIC_MODEL_SERVICE_URL ?? "http://localhost:8000";
 
 async function postJSON<T>(path: string, body: unknown): Promise<T> {
@@ -58,6 +63,22 @@ export const modelAdapter = {
       head,
       new_pattern: newPattern,
       top_k: topK,
+    });
+  },
+
+  async explainChange(
+    prompt: string,
+    editDescription: string,
+    beforePredictions: PredictionSummary[],
+    afterPredictions: PredictionSummary[],
+    depth: "beginner" | "developer" = "beginner"
+  ): Promise<{ explanation: string }> {
+    return postJSON<{ explanation: string }>("/api/explain", {
+      prompt,
+      edit_description: editDescription,
+      before_predictions: beforePredictions,
+      after_predictions: afterPredictions,
+      depth,
     });
   },
 };

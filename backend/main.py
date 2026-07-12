@@ -19,8 +19,11 @@ from schemas import (
     RecomputeFromAttentionRequest,
     RecomputeResponse,
     HealthResponse,
+    ExplainRequest,
+    ExplainResponse,
 )
 from model_service import ModelService, MODEL_REGISTRY
+from explanation_service import ExplanationService
 
 app = FastAPI(
     title="TransLens Model Service",
@@ -101,5 +104,35 @@ def recompute_from_attention(req: RecomputeFromAttentionRequest):
             new_pattern=req.new_pattern,
             top_k=req.top_k,
         )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# Lazy-loaded, unlike the gpt2 pipeline service -- not every session uses
+# AI Explanations, and Qwen2.5-0.5B is a separate ~1GB download/load, so
+# there's no reason to pay that cost on every server startup. First call
+# to /api/explain will be slower (model load), everything after is fast.
+_explanation_service: ExplanationService | None = None
+
+
+def get_explanation_service() -> ExplanationService:
+    global _explanation_service
+    if _explanation_service is None:
+        _explanation_service = ExplanationService()
+    return _explanation_service
+
+
+@app.post("/api/explain", response_model=ExplainResponse)
+def explain_change(req: ExplainRequest):
+    svc = get_explanation_service()
+    try:
+        explanation = svc.explain(
+            prompt=req.prompt,
+            edit_description=req.edit_description,
+            before=req.before_predictions,
+            after=req.after_predictions,
+            depth=req.depth,
+        )
+        return ExplainResponse(explanation=explanation)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

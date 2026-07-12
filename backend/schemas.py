@@ -131,3 +131,20 @@ class HealthResponse(BaseModel):
     status: str
     model_loaded: str
     device: str
+
+
+class PredictionSummary(BaseModel):
+    token_text: str
+    probability: float
+
+
+class ExplainRequest(BaseModel):
+    prompt: str = Field(..., min_length=1, max_length=512)
+    edit_description: str = Field(..., description="e.g. 'Edited layer 3, head 5 attention pattern'")
+    before_predictions: List[PredictionSummary] = Field(..., max_length=5)
+    after_predictions: List[PredictionSummary] = Field(..., max_length=5)
+    depth: str = Field(default="beginner", description="'beginner' or 'developer' -- matches X-Ray Mode")
+
+
+class ExplainResponse(BaseModel):
+    explanation: str

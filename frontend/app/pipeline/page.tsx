@@ -6,6 +6,7 @@ import { usePipelineStore } from "@/lib/store/usePipelineStore";
 import { SignalSpine } from "@/components/pipeline/SignalSpine";
 import { VisualHistory } from "@/components/pipeline/VisualHistory";
 import { BranchSwitcher } from "@/components/pipeline/BranchSwitcher";
+import { ExplanationPanel } from "@/components/pipeline/ExplanationPanel";
 import { BeforeAfterToggle } from "@/components/pipeline/BeforeAfterToggle";
 import { DepthSelector } from "@/components/pipeline/DepthSelector";
 import { TokenizationView } from "@/components/stages/tokenization/TokenizationView";
@@ -46,6 +47,7 @@ export default function PipelinePage() {
 
       <VisualHistory />
       <BranchSwitcher />
+      <ExplanationPanel />
 
       <div className="mx-auto max-w-5xl">
         {activeStage === "tokenization" && <TokenizationView />}

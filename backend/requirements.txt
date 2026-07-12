@@ -1,5 +1,6 @@
 fastapi>=0.110
 uvicorn[standard]>=0.29
 transformer-lens>=1.17
+transformers>=4.40
 torch>=2.2
 pydantic>=2.6
