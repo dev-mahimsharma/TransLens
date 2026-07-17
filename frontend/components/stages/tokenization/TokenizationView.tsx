@@ -4,6 +4,8 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { usePipelineStore } from "@/lib/store/usePipelineStore";
 import { STAGE_EXPLANATIONS } from "@/lib/content/explanations";
+import { TokenEditor } from "./TokenEditor";
+import type { TokenInfo } from "@/lib/engine/types";
 
 /**
  * Tokenization deep-dive. Each token is a card showing the raw text, its
@@ -19,7 +21,7 @@ import { STAGE_EXPLANATIONS } from "@/lib/content/explanations";
 export function TokenizationView() {
   const snapshot = usePipelineStore((s) => s.activeSnapshot());
   const setActiveStage = usePipelineStore((s) => s.setActiveStage);
-  const depth = usePipelineStore((s) => s.explanationDepth);
+  const learningMode = usePipelineStore((s) => s.learningMode);
   const [selected, setSelected] = useState<number | null>(null);
 
   if (!snapshot) return null;
@@ -30,9 +32,27 @@ export function TokenizationView() {
       <div className="mb-8">
         <h2 className="font-display text-2xl text-paper">Tokenization</h2>
         <p className="mt-2 max-w-lg text-sm text-graphite">
-          {STAGE_EXPLANATIONS.tokenization[depth]}
+          {STAGE_EXPLANATIONS.tokenization}
         </p>
       </div>
+
+      {learningMode === "custom" ? <TokenEditor initialTokens={tokens.slice(1).map((token) => token.text)} /> : <OriginalTokens tokens={tokens} selected={selected} setSelected={setSelected} />}
+
+      {learningMode === "original" && <div className="mt-12 flex justify-end">
+        <button
+          onClick={() => setActiveStage("embeddings")}
+          className="rounded-full bg-signal-cyan px-5 py-2 font-mono text-xs font-medium uppercase tracking-wider text-white transition-opacity hover:opacity-90"
+        >
+          Next: Embeddings →
+        </button>
+      </div>}
+    </section>
+  );
+}
+
+function OriginalTokens({ tokens, selected, setSelected }: { tokens: TokenInfo[]; selected: number | null; setSelected: (value: number | null) => void }) {
+  return (
+    <>
 
       <div className="flex flex-wrap gap-3">
         {tokens.map((token) => {
@@ -72,16 +92,7 @@ export function TokenizationView() {
           </motion.div>
         )}
       </AnimatePresence>
-
-      <div className="mt-12 flex justify-end">
-        <button
-          onClick={() => setActiveStage("embeddings")}
-          className="rounded-full bg-signal-cyan px-5 py-2 font-mono text-xs font-medium uppercase tracking-wider text-void transition-opacity hover:opacity-90"
-        >
-          Next: Embeddings →
-        </button>
-      </div>
-    </section>
+    </>
   );
 }
 

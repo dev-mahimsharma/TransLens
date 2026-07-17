@@ -33,7 +33,6 @@ export function AttentionView() {
   const editAttention = usePipelineStore((s) => s.editAttention);
   const setActiveStage = usePipelineStore((s) => s.setActiveStage);
   const isLoading = usePipelineStore((s) => s.isLoading);
-  const depth = usePipelineStore((s) => s.explanationDepth);
   const layer = usePipelineStore((s) => s.activeLayer);
   const setLayer = usePipelineStore((s) => s.setActiveLayer);
 
@@ -101,7 +100,7 @@ export function AttentionView() {
       <div className="mb-6">
         <h2 className="font-display text-2xl text-paper">Self-Attention</h2>
         <p className="mt-2 max-w-lg text-sm text-graphite">
-          {STAGE_EXPLANATIONS.attention[depth]}
+          {STAGE_EXPLANATIONS.attention}
         </p>
       </div>
 
@@ -291,7 +290,7 @@ export function AttentionView() {
   );
 }
 
-function AllHeadsGrid({
+export function AllHeadsGrid({
   heads,
   tokens,
   onSelectHead,
@@ -335,7 +334,7 @@ function AllHeadsGrid({
   );
 }
 
-function LayerHeadStepper({
+export function LayerHeadStepper({
   label,
   value,
   max,

@@ -23,6 +23,11 @@ from schemas import (
     ExplainResponse,
     LayerDetailRequest,
     LayerDetailResponse,
+    RunCustomTokensRequest,
+    TokenizeTextRequest,
+    TokenizeTextResponse,
+    EmbeddingLookupRequest,
+    EmbeddingLookupResponse,
 )
 from model_service import ModelService, MODEL_REGISTRY
 from explanation_service import ExplanationService
@@ -121,6 +126,33 @@ def layer_detail(req: LayerDetailRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@app.post("/api/pipeline/run_custom_tokens", response_model=PipelineRunResponse)
+def run_custom_tokens(req: RunCustomTokensRequest):
+    svc = get_service(req.model)
+    try:
+        return svc.run_custom_tokens(custom_tokens=req.custom_tokens, top_k=req.top_k)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/tokenize", response_model=TokenizeTextResponse)
+def tokenize_text(req: TokenizeTextRequest):
+    svc = get_service(req.model)
+    try:
+        return svc.tokenize_text(req.text)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/embeddings/lookup", response_model=EmbeddingLookupResponse)
+def embeddings_lookup(req: EmbeddingLookupRequest):
+    svc = get_service(req.model)
+    try:
+        return svc.lookup_word_embeddings(req.words)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 # Lazy-loaded, unlike the gpt2 pipeline service -- not every session uses
 # AI Explanations, and Qwen2.5-0.5B is a separate ~1GB download/load, so
 # there's no reason to pay that cost on every server startup. First call
@@ -144,7 +176,6 @@ def explain_change(req: ExplainRequest):
             edit_description=req.edit_description,
             before=req.before_predictions,
             after=req.after_predictions,
-            depth=req.depth,
         )
         return ExplainResponse(explanation=explanation)
     except Exception as e:

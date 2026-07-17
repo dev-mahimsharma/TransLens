@@ -21,7 +21,6 @@ export function SamplingView() {
   const snapshot = usePipelineStore((s) => s.activeSnapshot());
   const previous = usePipelineStore((s) => s.previousSnapshot());
   const compareEnabled = usePipelineStore((s) => s.compareEnabled);
-  const depth = usePipelineStore((s) => s.explanationDepth);
   const prompt = usePipelineStore((s) => s.prompt);
   const setActiveStage = usePipelineStore((s) => s.setActiveStage);
 
@@ -71,7 +70,7 @@ export function SamplingView() {
       <div className="mb-6">
         <h2 className="font-display text-2xl text-paper">Sampling</h2>
         <p className="mt-2 max-w-lg text-sm text-graphite">
-          {STAGE_EXPLANATIONS.sampling[depth]}
+          {STAGE_EXPLANATIONS.sampling}
         </p>
       </div>
 
@@ -167,7 +166,7 @@ export function SamplingView() {
       <div className="mt-8 flex items-center gap-4">
         <button
           onClick={handleSample}
-          className="rounded-full bg-signal-cyan px-5 py-2 font-mono text-xs font-medium uppercase tracking-wider text-void transition-opacity hover:opacity-90"
+          className="rounded-full bg-signal-cyan px-5 py-2 font-mono text-xs font-medium uppercase tracking-wider text-white transition-opacity hover:opacity-90"
         >
           Sample Next Token
         </button>
@@ -206,7 +205,7 @@ export function SamplingView() {
         </button>
         <button
           onClick={handleStartOver}
-          className="rounded-full bg-signal-cyan px-5 py-2 font-mono text-xs font-medium uppercase tracking-wider text-void transition-opacity hover:opacity-90"
+          className="rounded-full bg-signal-cyan px-5 py-2 font-mono text-xs font-medium uppercase tracking-wider text-white transition-opacity hover:opacity-90"
         >
           Try a New Prompt
         </button>

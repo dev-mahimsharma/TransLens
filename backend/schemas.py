@@ -143,7 +143,6 @@ class ExplainRequest(BaseModel):
     edit_description: str = Field(..., description="e.g. 'Edited layer 3, head 5 attention pattern'")
     before_predictions: List[PredictionSummary] = Field(..., max_length=5)
     after_predictions: List[PredictionSummary] = Field(..., max_length=5)
-    depth: str = Field(default="beginner", description="'beginner' or 'developer' -- matches X-Ray Mode")
 
 
 class ExplainResponse(BaseModel):
@@ -175,3 +174,59 @@ class LayerDetailRequest(BaseModel):
 class LayerDetailResponse(BaseModel):
     layer: int
     ffn_activations: List[TokenFFNActivations]
+
+
+class RunCustomTokensRequest(BaseModel):
+    """
+    Powers Custom Mode's editable Tokenization stage. `custom_tokens` are
+    arbitrary user-defined strings (after split/merge/edit/reorder) that
+    do NOT correspond to real GPT-2 vocabulary entries in general -- there
+    is no "real" way to run them. Each one is simulated by averaging the
+    real embeddings of whatever real sub-tokens its text decodes to. This
+    is explicitly a simulation, not literally how GPT-2 works -- see
+    model_service.py's run_custom_tokens for the full reasoning.
+    """
+    custom_tokens: List[str] = Field(..., min_length=1)
+    model: str = Field(default="gpt2")
+    top_k: int = Field(default=10, ge=1, le=50)
+
+
+class TokenizeTextRequest(BaseModel):
+    """
+    Lightweight, no-model-forward-pass endpoint: just runs the real
+    tokenizer on a string and returns whatever real sub-tokens it decodes
+    to. Used by the "View real ID" button in TokenEditor -- a custom
+    token's text often isn't a single real vocabulary entry, so this can
+    (and often will) return more than one sub-token.
+    """
+    text: str = Field(..., min_length=0, max_length=200)
+    model: str = Field(default="gpt2")
+
+
+class SubTokenInfo(BaseModel):
+    id: int
+    text: str
+
+
+class TokenizeTextResponse(BaseModel):
+    sub_tokens: List[SubTokenInfo]
+
+
+class EmbeddingLookupRequest(BaseModel):
+    """
+    Powers the Embeddings page's "Explore Examples" galaxy -- a curated,
+    static word bank (not the user's live prompt) used purely to
+    demonstrate semantic clustering with real GPT-2 embeddings. Cheap: no
+    forward pass, just a direct lookup into the token embedding table.
+    """
+    words: List[str] = Field(..., min_length=1, max_length=200)
+    model: str = Field(default="gpt2")
+
+
+class WordEmbedding(BaseModel):
+    word: str
+    embedding: List[float]
+
+
+class EmbeddingLookupResponse(BaseModel):
+    embeddings: List[WordEmbedding]

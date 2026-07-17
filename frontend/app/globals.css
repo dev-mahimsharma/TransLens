@@ -3,14 +3,14 @@
 @tailwind utilities;
 
 :root {
-  --void: #08090c;
-  --void-raised: #0f1116;
-  --signal-cyan: #4ce0d2;
-  --signal-violet: #9b7fff;
-  --ember: #ff6b4a;
-  --paper: #edeef2;
+  --void: #ffffff;
+  --void-raised: #f8f9fb;
+  --signal-cyan: #2563eb;
+  --signal-violet: #4f46e5;
+  --ember: #ef4444;
+  --paper: #111827;
   --graphite: #6b7280;
-  --graphite-dim: #4a4e5a;
+  --graphite-dim: #e5e7eb;
 
   /* Spine glow intensity -- driven at runtime by the pipeline store when
      data is actively flowing (e.g. during a Time Travel recompute). */
@@ -26,6 +26,28 @@ body {
   background: var(--void);
   color: var(--paper);
   font-family: var(--font-inter), sans-serif;
+}
+
+body { min-height: 100vh; }
+
+::selection { background: #dbeafe; color: #1e3a8a; }
+
+input[type="range"] { accent-color: var(--signal-cyan); }
+
+.surface-card {
+  border: 1px solid var(--graphite-dim);
+  background: var(--void-raised);
+  box-shadow: 0 1px 2px rgba(17, 24, 39, 0.03), 0 8px 24px rgba(17, 24, 39, 0.035);
+}
+
+/* Keep learning controls comfortably legible instead of compact dashboard-sized. */
+.surface-card > section {
+  padding-top: 3rem;
+  padding-bottom: 3rem;
+}
+
+.surface-card button {
+  min-height: 2.5rem;
 }
 
 /* Every number, token, and vector value in the product renders in mono --

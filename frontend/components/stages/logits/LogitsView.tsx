@@ -17,7 +17,6 @@ import { STAGE_EXPLANATIONS } from "@/lib/content/explanations";
 export function LogitsView() {
   const snapshot = usePipelineStore((s) => s.activeSnapshot());
   const setActiveStage = usePipelineStore((s) => s.setActiveStage);
-  const depth = usePipelineStore((s) => s.explanationDepth);
 
   const predictions = snapshot?.data.top_k_predictions ?? [];
 
@@ -35,7 +34,7 @@ export function LogitsView() {
       <div className="mb-8">
         <h2 className="font-display text-2xl text-paper">Logits</h2>
         <p className="mt-2 max-w-lg text-sm text-graphite">
-          {STAGE_EXPLANATIONS.logits[depth]}
+          {STAGE_EXPLANATIONS.logits}
         </p>
       </div>
 
@@ -92,7 +91,7 @@ export function LogitsView() {
         </button>
         <button
           onClick={() => setActiveStage("sampling")}
-          className="rounded-full bg-signal-cyan px-5 py-2 font-mono text-xs font-medium uppercase tracking-wider text-void transition-opacity hover:opacity-90"
+          className="rounded-full bg-signal-cyan px-5 py-2 font-mono text-xs font-medium uppercase tracking-wider text-white transition-opacity hover:opacity-90"
         >
           Next: Sampling →
         </button>

@@ -54,17 +54,23 @@ interface PipelineState {
   // null means "fall back to the active snapshot's parent".
   compareSnapshotId: string | null;
 
-  // X-Ray Mode: how technical the explanatory text in each stage should
-  // be. Scoped to two levels for v3 (Beginner/Developer) per the reduced
-  // roadmap -- Intermediate/Advanced can slot in later without changing
-  // this shape, just adding more cases where it's read.
-  explanationDepth: "beginner" | "developer";
-
   // Shared across Attention and Feed-Forward Network stages so scrubbing
   // through the transformer stack in one place moves both -- this is what
   // makes it read as "navigating the layers" rather than two independent,
   // coincidentally-similar controls.
   activeLayer: number;
+
+  // "original" = view-only walkthrough of a real GPT-2 run, no editing.
+  // "custom" = the full interactive experience (Time Travel, Branching,
+  // Before/After, editable Embeddings/Attention). Read by /pipeline/page.tsx
+  // to decide which stage component variant to render.
+  learningMode: "original" | "custom";
+
+  // Custom Mode's editable-tokenization feature: the user's current
+  // split/merge/edit/reorder state, kept in the store (not just local
+  // component state) so it survives navigating away from the
+  // Tokenization stage and back.
+  customTokens: string[];
 
   // ---- actions ----
   setPrompt: (prompt: string) => void;
@@ -73,8 +79,10 @@ interface PipelineState {
   jumpToSnapshot: (id: string) => void;
   toggleCompare: () => void;
   setCompareSnapshot: (id: string | null) => void;
-  setExplanationDepth: (depth: "beginner" | "developer") => void;
   setActiveLayer: (layer: number) => void;
+  setLearningMode: (mode: "original" | "custom") => void;
+  setCustomTokens: (tokens: string[]) => void;
+  runCustomPipeline: (customTokens: string[]) => Promise<void>;
 
   editEmbedding: (tokenIndex: number, newVector: number[]) => Promise<void>;
   editAttention: (layer: number, head: number, newPattern: number[][]) => Promise<void>;
@@ -105,15 +113,44 @@ export const usePipelineStore = create<PipelineState>((set, get) => ({
   activeStage: "prompt",
   compareEnabled: false,
   compareSnapshotId: null,
-  explanationDepth: "beginner",
   activeLayer: 0,
+  learningMode: "original",
+  customTokens: [],
 
   setPrompt: (prompt) => set({ prompt }),
   setActiveStage: (stage) => set({ activeStage: stage }),
   toggleCompare: () => set((s) => ({ compareEnabled: !s.compareEnabled })),
   setCompareSnapshot: (id) => set({ compareSnapshotId: id, compareEnabled: true }),
-  setExplanationDepth: (depth) => set({ explanationDepth: depth }),
   setActiveLayer: (layer) => set({ activeLayer: layer }),
+  setLearningMode: (mode) => set({ learningMode: mode }),
+  setCustomTokens: (tokens) => set({ customTokens: tokens }),
+
+  runCustomPipeline: async (customTokens) => {
+    set({ isLoading: true, error: null });
+    try {
+      const data = await modelAdapter.runCustomTokens(customTokens, get().model);
+      const id = makeSnapshotId();
+      const snapshot: Snapshot = { id, parentId: null, createdAt: Date.now(), origin: null, data };
+      set({
+        // Fresh root, same as runPipeline -- this is a materially
+        // different run (simulated custom tokenization), not an edit of
+        // the previous one, so it gets its own tree rather than becoming
+        // a Time Travel branch off the real run.
+        snapshots: { [id]: snapshot },
+        rootId: id,
+        activeSnapshotId: id,
+        activeStage: "embeddings",
+        compareSnapshotId: null,
+        compareEnabled: false,
+        isLoading: false,
+      });
+    } catch (err) {
+      set({
+        isLoading: false,
+        error: err instanceof Error ? err.message : "Failed to run custom tokenization",
+      });
+    }
+  },
 
   runPipeline: async (prompt) => {
     set({ isLoading: true, error: null });

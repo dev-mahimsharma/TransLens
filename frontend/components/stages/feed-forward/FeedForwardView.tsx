@@ -23,9 +23,10 @@ export function FeedForwardView() {
   const snapshot = usePipelineStore((s) => s.activeSnapshot());
   const prompt = usePipelineStore((s) => s.prompt);
   const setActiveStage = usePipelineStore((s) => s.setActiveStage);
-  const depth = usePipelineStore((s) => s.explanationDepth);
   const layer = usePipelineStore((s) => s.activeLayer);
   const setLayer = usePipelineStore((s) => s.setActiveLayer);
+  const learningMode = usePipelineStore((s) => s.learningMode);
+  const customTokens = usePipelineStore((s) => s.customTokens);
 
   const [detail, setDetail] = useState<LayerDetailResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -39,7 +40,7 @@ export function FeedForwardView() {
     setIsLoading(true);
     setError(null);
     modelAdapter
-      .getLayerDetail(prompt, layer)
+      .getLayerDetail(prompt, layer, "gpt2", 8, learningMode === "custom" ? customTokens : undefined)
       .then((result) => {
         if (!cancelled) setDetail(result);
       })
@@ -52,7 +53,7 @@ export function FeedForwardView() {
     return () => {
       cancelled = true;
     };
-  }, [prompt, layer]);
+  }, [prompt, layer, learningMode, customTokens]);
 
   if (!snapshot) return null;
 
@@ -61,7 +62,7 @@ export function FeedForwardView() {
       <div className="mb-6">
         <h2 className="font-display text-2xl text-paper">Feed-Forward Network</h2>
         <p className="mt-2 max-w-lg text-sm text-graphite">
-          {STAGE_EXPLANATIONS.feed_forward[depth]}
+          {STAGE_EXPLANATIONS.feed_forward}
         </p>
       </div>
 
@@ -141,7 +142,7 @@ export function FeedForwardView() {
         </button>
         <button
           onClick={() => setActiveStage("logits")}
-          className="rounded-full bg-signal-cyan px-5 py-2 font-mono text-xs font-medium uppercase tracking-wider text-void transition-opacity hover:opacity-90"
+          className="rounded-full bg-signal-cyan px-5 py-2 font-mono text-xs font-medium uppercase tracking-wider text-white transition-opacity hover:opacity-90"
         >
           Next: Logits →
         </button>

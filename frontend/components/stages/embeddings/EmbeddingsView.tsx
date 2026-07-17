@@ -1,10 +1,28 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import dynamic from "next/dynamic";
 import { motion } from "framer-motion";
 import { usePipelineStore } from "@/lib/store/usePipelineStore";
 import { pca } from "@/lib/engine/Pca";
 import { STAGE_EXPLANATIONS } from "@/lib/content/explanations";
+
+// ssr:false is required here -- Three.js needs a real WebGL context,
+// which doesn't exist during server-side rendering. Loading it lazily
+// also means the (fairly heavy) 3D scene code only downloads when
+// someone actually switches to Explore Examples, not on every page load.
+const ExploreExamplesGalaxy = dynamic(
+  () => import("./ExploreExamplesGalaxy").then((m) => m.ExploreExamplesGalaxy),
+  { ssr: false, loading: () => <GalaxyLoadingPlaceholder /> }
+);
+
+function GalaxyLoadingPlaceholder() {
+  return (
+    <div className="flex h-[520px] items-center justify-center rounded-2xl border border-graphite-dim bg-void-raised">
+      <p className="font-mono text-sm text-graphite">Loading the galaxy…</p>
+    </div>
+  );
+}
 
 const VIEW_SIZE = 560;
 const PADDING = 60;
@@ -28,6 +46,7 @@ export function EmbeddingsView() {
   const depth = usePipelineStore((s) => s.explanationDepth);
   const [hovered, setHovered] = useState<number | null>(null);
   const [dragging, setDragging] = useState<number | null>(null);
+  const [viewMode, setViewMode] = useState<"my-prompt" | "explore-examples">("my-prompt");
 
   const { tokens, embeddings } = snapshot?.data ?? { tokens: [], embeddings: [] };
 
@@ -109,13 +128,37 @@ export function EmbeddingsView() {
 
   return (
     <section className="py-10">
-      <div className="mb-8">
-        <h2 className="font-display text-2xl text-paper">Embeddings</h2>
-        <p className="mt-2 max-w-lg text-sm text-graphite">
-          {STAGE_EXPLANATIONS.embeddings[depth]}
-        </p>
+      <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
+        <div className="mb-2">
+          <h2 className="font-display text-2xl text-paper">Embeddings</h2>
+          <p className="mt-2 max-w-lg text-sm text-graphite">
+            {STAGE_EXPLANATIONS.embeddings[depth]}
+          </p>
+        </div>
+        <div className="flex items-center rounded-full border border-graphite-dim bg-void-raised p-0.5">
+          {(["my-prompt", "explore-examples"] as const).map((mode) => (
+            <button
+              key={mode}
+              onClick={() => setViewMode(mode)}
+              className={`rounded-full px-3 py-1.5 font-mono text-[10px] uppercase tracking-wider transition-colors ${
+                viewMode === mode ? "bg-signal-cyan text-void" : "text-graphite hover:text-paper"
+              }`}
+            >
+              {mode === "my-prompt" ? "My Prompt" : "Explore Examples"}
+            </button>
+          ))}
+        </div>
       </div>
 
+      {viewMode === "explore-examples" ? (
+        <div>
+          <p className="mb-4 max-w-xl text-sm text-graphite">
+            A curated set of real words, plotted by their real GPT-2 embeddings — not your prompt. Rotate, zoom, and
+            hover to see how related words cluster together in the model&apos;s own sense of meaning.
+          </p>
+          <ExploreExamplesGalaxy />
+        </div>
+      ) : (
       <div className="flex flex-col gap-8 lg:flex-row">
         <svg
           viewBox={`0 0 ${VIEW_SIZE} ${VIEW_SIZE}`}
@@ -207,6 +250,7 @@ export function EmbeddingsView() {
           )}
         </div>
       </div>
+      )}
 
       <div className="mt-12 flex justify-end">
         <button

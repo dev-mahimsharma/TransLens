@@ -26,6 +26,11 @@ export interface LayerDetailResponse {
   ffn_activations: TokenFFNActivations[];
 }
 
+export interface SubTokenInfo {
+  id: number;
+  text: string;
+}
+
 const BASE_URL = process.env.NEXT_PUBLIC_MODEL_SERVICE_URL ?? "http://localhost:8000";
 
 async function postJSON<T>(path: string, body: unknown): Promise<T> {
@@ -86,15 +91,13 @@ export const modelAdapter = {
     prompt: string,
     editDescription: string,
     beforePredictions: PredictionSummary[],
-    afterPredictions: PredictionSummary[],
-    depth: "beginner" | "developer" = "beginner"
+    afterPredictions: PredictionSummary[]
   ): Promise<{ explanation: string }> {
     return postJSON<{ explanation: string }>("/api/explain", {
       prompt,
       edit_description: editDescription,
       before_predictions: beforePredictions,
       after_predictions: afterPredictions,
-      depth,
     });
   },
 
@@ -110,5 +113,21 @@ export const modelAdapter = {
       layer,
       top_k_neurons: topKNeurons,
     });
+  },
+
+  async runCustomTokens(
+    customTokens: string[],
+    model = "gpt2",
+    topK = 10
+  ): Promise<PipelineRunResponse> {
+    return postJSON<PipelineRunResponse>("/api/pipeline/run_custom_tokens", {
+      custom_tokens: customTokens,
+      model,
+      top_k: topK,
+    });
+  },
+
+  async tokenizeText(text: string, model = "gpt2"): Promise<{ sub_tokens: SubTokenInfo[] }> {
+    return postJSON<{ sub_tokens: SubTokenInfo[] }>("/api/tokenize", { text, model });
   },
 };

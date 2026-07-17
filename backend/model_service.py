@@ -35,6 +35,10 @@ from schemas import (
     NeuronActivation,
     TokenFFNActivations,
     LayerDetailResponse,
+    SubTokenInfo,
+    TokenizeTextResponse,
+    WordEmbedding,
+    EmbeddingLookupResponse,
 )
 
 MODEL_REGISTRY = {
@@ -233,6 +237,144 @@ class ModelService:
             activations.append(TokenFFNActivations(token_index=i, top_neurons=top_neurons))
 
         return LayerDetailResponse(layer=layer, ffn_activations=activations)
+
+    # ---------- Custom Mode: simulated tokenization ----------
+
+    @torch.no_grad()
+    def run_custom_tokens(
+        self, custom_tokens: list[str], top_k: int = 10
+    ) -> PipelineRunResponse:
+        """
+        Runs the model on user-defined "tokens" that generally do NOT
+        correspond to real vocabulary entries -- e.g. two real tokens
+        merged into one, or one real token split in half. There's no
+        principled way to get a "real" embedding for text like that, so
+        this SIMULATES one: each custom token's text is re-tokenized with
+        the real tokenizer to find whatever real sub-tokens it decodes to,
+        their real embeddings are averaged into a single vector, and that
+        stands in as "the embedding" for this position.
+
+        This is explicitly a simulation for experimentation, not a
+        faithful reproduction of GPT-2's real behavior -- averaging
+        sub-token embeddings is a reasonable, well-precedented
+        approximation (it's what many embedding-merge techniques do), but
+        it is NOT what GPT-2 would compute if that string were actually
+        in its vocabulary (it isn't, so there's no ground truth to match).
+
+        Position embeddings ARE real -- position i still gets the model's
+        actual learned embedding for position i, since that part of the
+        architecture is well-defined regardless of what's semantically
+        "in" each position.
+        """
+        n = len(custom_tokens)
+        if n == 0:
+            raise ValueError("custom_tokens must not be empty")
+
+        combined_embeds = []
+        tokens_info = []
+        for i, text in enumerate(custom_tokens):
+            # add_special_tokens=False is important here: without it, some
+            # tokenizer configs (TransformerLens sets add_bos_token on the
+            # underlying HF tokenizer for consistency with its own
+            # to_tokens()) will silently prepend the <|endoftext|> special
+            # token to every encode() call. That phantom token would get
+            # averaged into EVERY custom token's simulated embedding,
+            # subtly corrupting all of them -- including anything built
+            # from a merge, which is why merge results could look wrong
+            # even though the merge logic itself was fine.
+            ids = self.model.tokenizer.encode(text, add_special_tokens=False) if text else []
+            if not ids:
+                ids = self.model.tokenizer.encode(" ", add_special_tokens=False)
+            id_tensor = torch.tensor(ids, device=self.device)
+            sub_embeds = self.model.W_E[id_tensor]  # [num_subtokens, d_model]
+            combined = sub_embeds.mean(dim=0)  # the simulation step
+            combined_embeds.append(combined)
+            tokens_info.append(
+                TokenInfo(index=i, id=ids[0], text=text, raw=text)
+            )
+
+        combined_embeds_t = torch.stack(combined_embeds)  # [n, d_model]
+        pos_embeds = self.model.W_pos[:n]  # [n, d_model] -- real, unmodified
+        resid_pre_override = (combined_embeds_t + pos_embeds).unsqueeze(0)  # [1, n, d_model]
+
+        # Dummy input_ids purely to get a forward pass of the right shape
+        # started -- their actual values are irrelevant because the hook
+        # below completely overwrites the residual stream before layer 0
+        # does anything with it.
+        dummy_ids = torch.zeros((1, n), dtype=torch.long, device=self.device)
+
+        def override_resid_pre(value, hook):
+            return resid_pre_override
+
+        # `run_with_cache` records activations but does not accept forward
+        # hooks itself. Install the override through the model's hook context
+        # for this one inference pass, then let the context clean it up.
+        with self.model.hooks(
+            fwd_hooks=[("blocks.0.hook_resid_pre", override_resid_pre)]
+        ):
+            logits, cache = self.model.run_with_cache(dummy_ids)
+
+        embeddings = [
+            EmbeddingVector(
+                token_index=i,
+                token_embedding=combined_embeds_t[i].tolist(),
+                position_embedding=pos_embeds[i].tolist(),
+                combined=(combined_embeds_t[i] + pos_embeds[i]).tolist(),
+            )
+            for i in range(n)
+        ]
+        hidden_states = self._extract_hidden_states(cache, n)
+        attentions = self._extract_attentions(cache)
+        final_logits = logits[0, -1, :]
+        top_k_predictions = self._top_k(final_logits, top_k)
+
+        return PipelineRunResponse(
+            prompt=" ".join(custom_tokens),
+            model=self.model_key,
+            tokens=tokens_info,
+            embeddings=embeddings,
+            hidden_states=hidden_states,
+            attentions=attentions,
+            final_logits=final_logits.tolist(),
+            top_k_predictions=top_k_predictions,
+        )
+
+    # ---------- Lightweight tokenize-only (no forward pass) ----------
+
+    def tokenize_text(self, text: str) -> TokenizeTextResponse:
+        """
+        Used by the "View real ID" button: shows exactly what the real
+        tokenizer does with a piece of text, with no model computation
+        involved. Cheap and fast on purpose -- this can be called on
+        every click without worrying about load.
+        """
+        ids = self.model.tokenizer.encode(text, add_special_tokens=False) if text else []
+        if not ids:
+            ids = self.model.tokenizer.encode(" ", add_special_tokens=False)
+        sub_tokens = [
+            SubTokenInfo(id=tid, text=self.model.tokenizer.decode([tid]))
+            for tid in ids
+        ]
+        return TokenizeTextResponse(sub_tokens=sub_tokens)
+
+    def lookup_word_embeddings(self, words: list[str]) -> EmbeddingLookupResponse:
+        """
+        For the "Explore Examples" galaxy: real GPT-2 token embeddings for
+        a curated, fixed word list, decontextualized (no position, no
+        forward pass -- just the raw learned embedding for whichever real
+        token(s) the word's first sub-token maps to). If a word decodes
+        to multiple real sub-tokens, only the first is used -- this is a
+        demo of embedding-space clustering, not a claim about what the
+        model would do with that exact multi-token word in context.
+        """
+        results = []
+        for word in words:
+            ids = self.model.tokenizer.encode(word, add_special_tokens=False)
+            if not ids:
+                continue
+            vec = self.model.W_E[ids[0]]
+            results.append(WordEmbedding(word=word, embedding=vec.tolist()))
+        return EmbeddingLookupResponse(embeddings=results)
 
     # ---------- Shared extraction helpers ----------
 

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Space_Grotesk, Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
+import { TopNav } from "@/components/TopNav";
 
 const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
@@ -32,8 +33,20 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${spaceGrotesk.variable} ${inter.variable} ${jetbrainsMono.variable}`}>
-      <body className="bg-void text-paper font-body antialiased">{children}</body>
+    <html
+      lang="en"
+      className={`${spaceGrotesk.variable} ${inter.variable} ${jetbrainsMono.variable}`}
+      suppressHydrationWarning
+    >
+      {/* suppressHydrationWarning here too: browser extensions (Bitdefender's
+          bis_*, ColorZilla's cz-shortcut-listen, etc.) inject attributes
+          directly into the DOM before React hydrates, which otherwise
+          triggers a false-positive hydration mismatch warning that has
+          nothing to do with our actual rendered output. */}
+      <body className="bg-void text-paper font-body antialiased" suppressHydrationWarning>
+        <TopNav />
+        {children}
+      </body>
     </html>
   );
 }

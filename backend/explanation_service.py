@@ -32,13 +32,6 @@ SYSTEM_PROMPT_BEGINNER = (
     "Keep the explanation to 2-3 sentences."
 )
 
-SYSTEM_PROMPT_DEVELOPER = (
-    "You are explaining how a language model's internals work to an ML "
-    "engineer. Be precise and technical, but concise -- 2-3 sentences, no "
-    "filler."
-)
-
-
 class ExplanationService:
     def __init__(self, device: str | None = None):
         self.device = device or ("cuda" if torch.cuda.is_available() else "cpu")
@@ -57,10 +50,7 @@ class ExplanationService:
         edit_description: str,
         before: list[PredictionSummary],
         after: list[PredictionSummary],
-        depth: str = "beginner",
     ) -> str:
-        system = SYSTEM_PROMPT_BEGINNER if depth == "beginner" else SYSTEM_PROMPT_DEVELOPER
-
         before_str = ", ".join(f"{p.token_text!r} ({p.probability:.1%})" for p in before)
         after_str = ", ".join(f"{p.token_text!r} ({p.probability:.1%})" for p in after)
 
@@ -73,7 +63,7 @@ class ExplanationService:
         )
 
         messages = [
-            {"role": "system", "content": system},
+            {"role": "system", "content": SYSTEM_PROMPT_BEGINNER},
             {"role": "user", "content": user_message},
         ]
         chat_text = self.tokenizer.apply_chat_template(

@@ -19,7 +19,6 @@ export function ExplanationPanel() {
   const prompt = usePipelineStore((s) => s.prompt);
   const active = usePipelineStore((s) => s.activeSnapshot());
   const previous = usePipelineStore((s) => s.previousSnapshot());
-  const depth = usePipelineStore((s) => s.explanationDepth);
 
   const [explanation, setExplanation] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -43,8 +42,7 @@ export function ExplanationPanel() {
         prompt,
         active!.origin!.description,
         before,
-        after,
-        depth
+        after
       );
       setExplanation(result.explanation);
     } catch (err) {
@@ -73,7 +71,7 @@ export function ExplanationPanel() {
           <button
             onClick={handleExplain}
             disabled={isGenerating}
-            className="shrink-0 rounded-full bg-signal-cyan px-4 py-2 font-mono text-xs font-medium uppercase tracking-wider text-void transition-opacity hover:opacity-90 disabled:opacity-40"
+            className="shrink-0 rounded-full bg-signal-cyan px-4 py-2 font-mono text-xs font-medium uppercase tracking-wider text-white transition-opacity hover:opacity-90 disabled:opacity-40"
           >
             {isGenerating ? "Thinking…" : "Explain This Change"}
           </button>
