@@ -26,6 +26,7 @@ body {
   background: var(--void);
   color: var(--paper);
   font-family: var(--font-inter), sans-serif;
+  scroll-behavior: smooth;
 }
 
 body { min-height: 100vh; }

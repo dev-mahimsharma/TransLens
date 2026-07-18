@@ -36,6 +36,7 @@ const PremiumEmbeddingGraph = dynamic(
 export function OriginalEmbeddingsView() {
   const snapshot = usePipelineStore((s) => s.activeSnapshot());
   const depth = usePipelineStore((s) => s.explanationDepth);
+  const setActiveStage = usePipelineStore((s) => s.setActiveStage);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
   const { tokens, embeddings } = snapshot?.data ?? { tokens: [], embeddings: [] };
@@ -52,9 +53,9 @@ export function OriginalEmbeddingsView() {
 
   return (
     <section className="py-10">
-      <div className="mb-6">
+      <div className="mb-8 flex flex-col items-center text-center">
         <h2 className="font-display text-2xl text-paper">Embeddings</h2>
-        <p className="mt-2 max-w-lg text-sm text-graphite">
+        <p className="mt-2 max-w-2xl text-sm text-graphite">
           {STAGE_EXPLANATIONS.embeddings[depth]} Every point below is one of
           your prompt&apos;s actual tokens — nothing here is a stand-in or a
           generic example.
@@ -90,7 +91,13 @@ export function OriginalEmbeddingsView() {
       <EmbeddingEducation />
       <MisconceptionsPanel />
 
-      <div className="mt-12 flex justify-end">
+      <div className="mt-12 flex justify-between">
+        <button
+          onClick={() => setActiveStage("tokenization")}
+          className="rounded-full border border-graphite-dim px-5 py-2 font-mono text-xs uppercase tracking-wider text-graphite transition-colors hover:border-graphite hover:text-paper"
+        >
+          ← Back to Tokenization
+        </button>
         <OriginalNextButton stage="positional_encoding" label="Positional Encoding" />
       </div>
     </section>

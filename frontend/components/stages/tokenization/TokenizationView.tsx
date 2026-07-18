@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { usePipelineStore } from "@/lib/store/usePipelineStore";
 import { STAGE_EXPLANATIONS } from "@/lib/content/explanations";
@@ -22,6 +23,7 @@ export function TokenizationView() {
   const snapshot = usePipelineStore((s) => s.activeSnapshot());
   const setActiveStage = usePipelineStore((s) => s.setActiveStage);
   const learningMode = usePipelineStore((s) => s.learningMode);
+  const router = useRouter();
   const [selected, setSelected] = useState<number | null>(null);
 
   if (!snapshot) return null;
@@ -29,16 +31,25 @@ export function TokenizationView() {
 
   return (
     <section className="py-10">
-      <div className="mb-8">
-        <h2 className="font-display text-2xl text-paper">Tokenization</h2>
-        <p className="mt-2 max-w-lg text-sm text-graphite">
+      <div className="mb-12 flex flex-col items-center text-center">
+        <h2 className="font-display text-3xl text-paper">Tokenization</h2>
+        <p className="mt-4 max-w-2xl text-base text-graphite">
           {STAGE_EXPLANATIONS.tokenization}
+        </p>
+        <p className="mt-3 max-w-xl font-mono text-[11px] uppercase tracking-wider text-signal-cyan/80">
+          Raw text transforms into the fundamental units of language
         </p>
       </div>
 
       {learningMode === "custom" ? <TokenEditor initialTokens={tokens.slice(1).map((token) => token.text)} /> : <OriginalTokens tokens={tokens} selected={selected} setSelected={setSelected} />}
 
-      {learningMode === "original" && <div className="mt-12 flex justify-end">
+      {learningMode === "original" && <div className="mt-12 flex justify-between">
+        <button
+          onClick={() => router.push("/")}
+          className="rounded-full border border-graphite-dim px-5 py-2 font-mono text-xs uppercase tracking-wider text-graphite transition-colors hover:border-graphite hover:text-paper"
+        >
+          ← Back to Start
+        </button>
         <button
           onClick={() => setActiveStage("embeddings")}
           className="rounded-full bg-signal-cyan px-5 py-2 font-mono text-xs font-medium uppercase tracking-wider text-white transition-opacity hover:opacity-90"
@@ -54,7 +65,7 @@ function OriginalTokens({ tokens, selected, setSelected }: { tokens: TokenInfo[]
   return (
     <>
 
-      <div className="flex flex-wrap gap-3">
+      <div className="flex flex-wrap justify-center gap-3">
         {tokens.map((token) => {
           const isSelected = selected === token.index;
           return (

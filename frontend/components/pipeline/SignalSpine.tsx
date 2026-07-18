@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { usePipelineStore } from "@/lib/store/usePipelineStore";
 import { STAGE_ORDER, STAGE_LABELS, type StageId } from "@/lib/engine/types";
@@ -18,6 +19,7 @@ export function SignalSpine() {
   const setActiveStage = usePipelineStore((s) => s.setActiveStage);
   const hasRun = usePipelineStore((s) => s.rootId !== null);
   const isLoading = usePipelineStore((s) => s.isLoading);
+  const router = useRouter();
 
   const activeIndex = STAGE_ORDER.indexOf(activeStage);
 
@@ -50,7 +52,13 @@ export function SignalSpine() {
             <button
               key={stage}
               disabled={isDisabled}
-              onClick={() => setActiveStage(stage)}
+              onClick={() => {
+                if (stage === "prompt") {
+                  router.push("/");
+                } else {
+                  setActiveStage(stage);
+                }
+              }}
               className={cn(
                 "group flex flex-col items-center gap-3 transition-opacity",
                 isDisabled && "cursor-not-allowed opacity-30"
