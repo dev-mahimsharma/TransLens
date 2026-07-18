@@ -28,6 +28,8 @@ from schemas import (
     TokenizeTextResponse,
     EmbeddingLookupRequest,
     EmbeddingLookupResponse,
+    PositionalEncodingRequest,
+    PositionalEncodingResponse,
 )
 from model_service import ModelService, MODEL_REGISTRY
 from explanation_service import ExplanationService
@@ -153,6 +155,15 @@ def embeddings_lookup(req: EmbeddingLookupRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@app.post("/api/positional_encoding", response_model=PositionalEncodingResponse)
+def positional_encoding(req: PositionalEncodingRequest):
+    svc = get_service(req.model)
+    try:
+        return svc.get_positional_encoding(req.text)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 # Lazy-loaded, unlike the gpt2 pipeline service -- not every session uses
 # AI Explanations, and Qwen2.5-0.5B is a separate ~1GB download/load, so
 # there's no reason to pay that cost on every server startup. First call
@@ -176,6 +187,7 @@ def explain_change(req: ExplainRequest):
             edit_description=req.edit_description,
             before=req.before_predictions,
             after=req.after_predictions,
+            depth=req.depth,
         )
         return ExplainResponse(explanation=explanation)
     except Exception as e:

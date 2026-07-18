@@ -31,6 +31,17 @@ export interface SubTokenInfo {
   text: string;
 }
 
+export interface WordEmbedding {
+  word: string;
+  embedding: number[];
+}
+
+export interface PositionInfo {
+  index: number;
+  token_text: string;
+  vector: number[];
+}
+
 const BASE_URL = process.env.NEXT_PUBLIC_MODEL_SERVICE_URL ?? "http://localhost:8000";
 
 async function postJSON<T>(path: string, body: unknown): Promise<T> {
@@ -91,13 +102,15 @@ export const modelAdapter = {
     prompt: string,
     editDescription: string,
     beforePredictions: PredictionSummary[],
-    afterPredictions: PredictionSummary[]
+    afterPredictions: PredictionSummary[],
+    depth: "beginner" | "developer" = "beginner"
   ): Promise<{ explanation: string }> {
     return postJSON<{ explanation: string }>("/api/explain", {
       prompt,
       edit_description: editDescription,
       before_predictions: beforePredictions,
       after_predictions: afterPredictions,
+      depth,
     });
   },
 
@@ -129,5 +142,13 @@ export const modelAdapter = {
 
   async tokenizeText(text: string, model = "gpt2"): Promise<{ sub_tokens: SubTokenInfo[] }> {
     return postJSON<{ sub_tokens: SubTokenInfo[] }>("/api/tokenize", { text, model });
+  },
+
+  async lookupWordEmbeddings(words: string[], model = "gpt2"): Promise<{ embeddings: WordEmbedding[] }> {
+    return postJSON<{ embeddings: WordEmbedding[] }>("/api/embeddings/lookup", { words, model });
+  },
+
+  async getPositionalEncoding(text: string, model = "gpt2"): Promise<{ positions: PositionInfo[] }> {
+    return postJSON<{ positions: PositionInfo[] }>("/api/positional_encoding", { text, model });
   },
 };

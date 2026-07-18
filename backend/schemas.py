@@ -143,6 +143,7 @@ class ExplainRequest(BaseModel):
     edit_description: str = Field(..., description="e.g. 'Edited layer 3, head 5 attention pattern'")
     before_predictions: List[PredictionSummary] = Field(..., max_length=5)
     after_predictions: List[PredictionSummary] = Field(..., max_length=5)
+    depth: str = Field(default="beginner", description="'beginner' or 'developer' -- matches X-Ray Mode")
 
 
 class ExplainResponse(BaseModel):
@@ -230,3 +231,26 @@ class WordEmbedding(BaseModel):
 
 class EmbeddingLookupResponse(BaseModel):
     embeddings: List[WordEmbedding]
+
+
+class PositionalEncodingRequest(BaseModel):
+    """
+    Powers the Positional Encoding page's Playground. Deliberately does
+    NOT run the model -- GPT-2's positional embeddings depend only on
+    sequence position (0, 1, 2, ...), never on what the tokens actually
+    are, so this only needs the real tokenizer (to know how many tokens
+    and what to label them) plus a direct slice of the position
+    embedding table.
+    """
+    text: str = Field(..., max_length=200)
+    model: str = Field(default="gpt2")
+
+
+class PositionInfo(BaseModel):
+    index: int
+    token_text: str
+    vector: List[float]
+
+
+class PositionalEncodingResponse(BaseModel):
+    positions: List[PositionInfo]

@@ -39,6 +39,8 @@ from schemas import (
     TokenizeTextResponse,
     WordEmbedding,
     EmbeddingLookupResponse,
+    PositionInfo,
+    PositionalEncodingResponse,
 )
 
 MODEL_REGISTRY = {
@@ -306,13 +308,9 @@ class ModelService:
         def override_resid_pre(value, hook):
             return resid_pre_override
 
-        # `run_with_cache` records activations but does not accept forward
-        # hooks itself. Install the override through the model's hook context
-        # for this one inference pass, then let the context clean it up.
-        with self.model.hooks(
-            fwd_hooks=[("blocks.0.hook_resid_pre", override_resid_pre)]
-        ):
-            logits, cache = self.model.run_with_cache(dummy_ids)
+        logits, cache = self.model.run_with_cache(
+            dummy_ids, fwd_hooks=[("blocks.0.hook_resid_pre", override_resid_pre)]
+        )
 
         embeddings = [
             EmbeddingVector(
@@ -375,6 +373,19 @@ class ModelService:
             vec = self.model.W_E[ids[0]]
             results.append(WordEmbedding(word=word, embedding=vec.tolist()))
         return EmbeddingLookupResponse(embeddings=results)
+
+    def get_positional_encoding(self, text: str) -> PositionalEncodingResponse:
+        ids = self.model.tokenizer.encode(text, add_special_tokens=False) if text else []
+        if not ids:
+            ids = self.model.tokenizer.encode(" ", add_special_tokens=False)
+        n = len(ids)
+        pos_embeds = self.model.W_pos[:n]
+        texts = [self.model.tokenizer.decode([tid]) for tid in ids]
+        positions = [
+            PositionInfo(index=i, token_text=texts[i], vector=pos_embeds[i].tolist())
+            for i in range(n)
+        ]
+        return PositionalEncodingResponse(positions=positions)
 
     # ---------- Shared extraction helpers ----------
 

@@ -1,135 +1,68 @@
 "use client";
 
-import { useMemo } from "react";
+import { motion } from "framer-motion";
 import { usePipelineStore } from "@/lib/store/usePipelineStore";
-import { STAGE_EXPLANATIONS } from "@/lib/content/explanations";
-
-const CELL_SIZE = 34;
-const PADDING = 70;
-
-function cosineSim(a: number[], b: number[]): number {
-  let dot = 0, normA = 0, normB = 0;
-  for (let i = 0; i < a.length; i++) {
-    dot += a[i] * b[i];
-    normA += a[i] * a[i];
-    normB += b[i] * b[i];
-  }
-  return dot / (Math.sqrt(normA) * Math.sqrt(normB) || 1e-9);
-}
+import { PositionMattersSection } from "./PositionMattersSection";
+import { InteractiveSentenceSection } from "./InteractiveSentenceSection";
+import { PositionHeatmap } from "./PositionHeatmap";
+import { PositionEducationCards } from "./PositionEducationCards";
+import { PositionPlayground } from "./PositionPlayground";
+import { PositionSummaryCard } from "./PositionSummaryCard";
 
 /**
- * Split out from Embeddings so positional encoding gets its own moment
- * rather than being buried inside "combined" vectors. All data here
- * (position_embedding per token) already comes back from the backend's
- * normal /run and /recompute responses -- no new endpoint needed, this
- * is purely a new lens on existing data.
- *
- * The heatmap directly demonstrates the thing worth teaching: even
- * though GPT-2's positional embeddings are just a learned lookup table
- * with no built-in notion of "distance", training tends to make nearby
- * positions end up with similar vectors anyway.
+ * Full redesign per the conversation spec: 9 sections, visuals-first,
+ * built to be understood in under 2 minutes without reading long text.
+ * Keeps the existing white/minimal theme (bg-white cards, signal-cyan
+ * accent, paper/graphite text tokens) exactly as already established
+ * elsewhere in the app -- no new colors or layout system introduced.
  */
 export function PositionalEncodingView() {
   const snapshot = usePipelineStore((s) => s.activeSnapshot());
-  const setActiveStage = usePipelineStore((s) => s.setActiveStage);
-
   const { tokens, embeddings } = snapshot?.data ?? { tokens: [], embeddings: [] };
-  const n = tokens.length;
 
-  const similarityMatrix = useMemo(() => {
-    return embeddings.map((e1) =>
-      embeddings.map((e2) => cosineSim(e1.position_embedding, e2.position_embedding))
+  if (!snapshot || tokens.length < 2) {
+    return (
+      <div className="flex h-64 items-center justify-center rounded-2xl border border-dashed border-graphite-dim">
+        <p className="font-mono text-sm text-graphite">Need at least 2 tokens to visualize positional encoding</p>
+      </div>
     );
-  }, [embeddings]);
-
-  if (!snapshot || n === 0) return null;
-
-  const gridSize = n * CELL_SIZE;
-  const svgSize = gridSize + PADDING;
+  }
 
   return (
-    <section className="py-10">
-      <div className="mb-6">
-        <h2 className="font-display text-2xl text-paper">Positional Encoding</h2>
-        <p className="mt-2 max-w-lg text-sm text-graphite">
-          {STAGE_EXPLANATIONS.positional_encoding}
+    <div className="py-10">
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="text-center"
+      >
+        <span className="inline-block rounded-full bg-signal-cyan/10 px-3 py-1 font-mono text-[11px] font-medium uppercase tracking-wider text-signal-cyan">
+          Step 3 of the Transformer Pipeline
+        </span>
+        <h2 className="mt-4 font-display text-4xl font-semibold text-paper">Positional Encoding</h2>
+        <p className="mx-auto mt-3 max-w-md text-base text-graphite">
+          How a model that reads everything at once still knows what came first.
         </p>
-      </div>
+      </motion.div>
 
-      <div className="flex flex-col gap-8 lg:flex-row">
-        <svg viewBox={`0 0 ${svgSize} ${svgSize}`} className="w-full max-w-[480px]">
-          {/* Column labels */}
-          {tokens.map((t, j) => (
-            <text
-              key={`col-${j}`}
-              x={PADDING + j * CELL_SIZE + CELL_SIZE / 2}
-              y={PADDING - 12}
-              textAnchor="middle"
-              className="fill-graphite font-mono text-[9px]"
-            >
-              {j}
-            </text>
-          ))}
-          {/* Row labels */}
-          {tokens.map((t, i) => (
-            <text
-              key={`row-${i}`}
-              x={PADDING - 12}
-              y={PADDING + i * CELL_SIZE + CELL_SIZE / 2 + 3}
-              textAnchor="end"
-              className="fill-graphite font-mono text-[9px]"
-            >
-              {i}
-            </text>
-          ))}
-          {/* Heatmap cells */}
-          {similarityMatrix.map((row, i) =>
-            row.map((sim, j) => {
-              // sim ranges roughly -1..1; map to opacity for a cyan fill
-              const opacity = Math.max(0, sim);
-              return (
-                <rect
-                  key={`${i}-${j}`}
-                  x={PADDING + j * CELL_SIZE}
-                  y={PADDING + i * CELL_SIZE}
-                  width={CELL_SIZE - 2}
-                  height={CELL_SIZE - 2}
-                  fill="var(--signal-cyan)"
-                  fillOpacity={i === j ? 1 : opacity * 0.85}
-                  stroke="var(--void)"
-                  strokeWidth={1}
-                />
-              );
-            })
-          )}
-        </svg>
+      <PositionMattersSection />
 
-        <div className="flex-1">
-          <p className="mb-3 font-mono text-xs uppercase tracking-wider text-graphite">
-            How to read this
-          </p>
-          <ul className="space-y-2 text-sm text-graphite">
-            <li>• Each cell compares position i (row) to position j (column) — brighter means more similar.</li>
-            <li>• The diagonal is always brightest — every position is identical to itself.</li>
-            <li>• Look for brightness fading as you move away from the diagonal — that&apos;s nearby positions being more alike than distant ones.</li>
-          </ul>
+      <InteractiveSentenceSection tokens={tokens} embeddings={embeddings} />
+
+      <section className="mt-16">
+        <h3 className="text-center font-display text-2xl text-paper">Position similarity map</h3>
+        <p className="mx-auto mt-2 max-w-md text-center text-sm text-graphite">
+          Click any cell to lock in its exact similarity score. Brighter means more alike.
+        </p>
+        <div className="mt-8 flex justify-center">
+          <PositionHeatmap labels={tokens.map((t) => t.text)} vectors={embeddings.map((e) => e.position_embedding)} />
         </div>
-      </div>
+      </section>
 
-      <div className="mt-12 flex justify-between">
-        <button
-          onClick={() => setActiveStage("embeddings")}
-          className="rounded-full border border-graphite-dim px-5 py-2 font-mono text-xs uppercase tracking-wider text-graphite hover:text-paper"
-        >
-          ← Back to Embeddings
-        </button>
-        <button
-          onClick={() => setActiveStage("attention")}
-          className="rounded-full bg-signal-cyan px-5 py-2 font-mono text-xs font-medium uppercase tracking-wider text-white transition-opacity hover:opacity-90"
-        >
-          Next: Self-Attention →
-        </button>
-      </div>
-    </section>
+      <PositionEducationCards />
+
+      <PositionPlayground />
+
+      <PositionSummaryCard />
+    </div>
   );
 }
