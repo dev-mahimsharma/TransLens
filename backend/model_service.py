@@ -41,6 +41,8 @@ from schemas import (
     EmbeddingLookupResponse,
     PositionInfo,
     PositionalEncodingResponse,
+    AttentionMathStep,
+    AttentionMathResponse,
 )
 
 MODEL_REGISTRY = {
@@ -386,6 +388,58 @@ class ModelService:
             for i in range(n)
         ]
         return PositionalEncodingResponse(positions=positions)
+
+    @torch.no_grad()
+    def get_attention_math(
+        self, prompt: str, layer: int, head: int, query_index: int
+    ) -> AttentionMathResponse:
+        """
+        Real numbers at every stage, pulled directly from TransformerLens's
+        cache -- nothing here is illustrative or approximated:
+          1. raw_dot_product: q . k, computed by us from the real cached
+             Q and K vectors for this head.
+          2. scaled_score: the model's own real pre-softmax score, already
+             divided by sqrt(d_head) and causal-masked (-inf for future
+             positions) -- read directly from hook_attn_scores, not
+             recomputed, so it's exactly what the model actually used.
+          3. softmax_weight: the real final attention weight (same source
+             as everywhere else in the app, hook_pattern).
+        """
+        if layer < 0 or layer >= self.num_layers:
+            raise ValueError(f"layer must be in [0, {self.num_layers})")
+        if head < 0 or head >= self.num_heads:
+            raise ValueError(f"head must be in [0, {self.num_heads})")
+
+        tokens, tokens_tensor = self.tokenize(prompt)
+        if query_index < 0 or query_index >= len(tokens):
+            raise ValueError(f"query_index must be in [0, {len(tokens)})")
+
+        _, cache = self.model.run_with_cache(tokens_tensor)
+
+        q = cache[f"blocks.{layer}.attn.hook_q"][0, :, head, :]  # [seq, d_head]
+        k = cache[f"blocks.{layer}.attn.hook_k"][0, :, head, :]  # [seq, d_head]
+        scaled_scores = cache[f"blocks.{layer}.attn.hook_attn_scores"][0, head, query_index, :]
+        softmax_weights = cache[f"blocks.{layer}.attn.hook_pattern"][0, head, query_index, :]
+
+        raw_dot_products = (q[query_index] * k).sum(dim=-1)  # [seq]
+
+        steps = []
+        for key_index in range(len(tokens)):
+            steps.append(
+                AttentionMathStep(
+                    key_token_text=tokens[key_index].text,
+                    key_index=key_index,
+                    raw_dot_product=raw_dot_products[key_index].item(),
+                    scaled_score=scaled_scores[key_index].item(),
+                    softmax_weight=softmax_weights[key_index].item(),
+                )
+            )
+
+        return AttentionMathResponse(
+            query_token_text=tokens[query_index].text,
+            query_index=query_index,
+            steps=steps,
+        )
 
     # ---------- Shared extraction helpers ----------
 

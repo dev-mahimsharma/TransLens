@@ -42,6 +42,14 @@ export interface PositionInfo {
   vector: number[];
 }
 
+export interface AttentionMathStep {
+  key_token_text: string;
+  key_index: number;
+  raw_dot_product: number;
+  scaled_score: number;
+  softmax_weight: number;
+}
+
 const BASE_URL = process.env.NEXT_PUBLIC_MODEL_SERVICE_URL ?? "http://localhost:8000";
 
 async function postJSON<T>(path: string, body: unknown): Promise<T> {
@@ -150,5 +158,18 @@ export const modelAdapter = {
 
   async getPositionalEncoding(text: string, model = "gpt2"): Promise<{ positions: PositionInfo[] }> {
     return postJSON<{ positions: PositionInfo[] }>("/api/positional_encoding", { text, model });
+  },
+
+  async getAttentionMath(
+    prompt: string,
+    layer: number,
+    head: number,
+    queryIndex: number,
+    model = "gpt2"
+  ): Promise<{ query_token_text: string; query_index: number; steps: AttentionMathStep[] }> {
+    return postJSON<{ query_token_text: string; query_index: number; steps: AttentionMathStep[] }>(
+      "/api/pipeline/attention_math",
+      { prompt, model, layer, head, query_index: queryIndex }
+    );
   },
 };

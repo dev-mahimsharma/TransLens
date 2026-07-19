@@ -1,4 +1,4 @@
-    "use client";
+"use client";
 
 import { motion } from "framer-motion";
 
@@ -53,36 +53,48 @@ const CARDS: EducationCard[] = [
 
 export function EmbeddingEducation() {
   return (
-    <div className="mt-12">
-      <h3 className="font-display text-xl text-paper">What&apos;s actually happening here</h3>
-      <p className="mt-2 max-w-lg text-sm text-graphite">
-        Eight short answers to the questions people usually have about embeddings — no heavy math required.
-      </p>
-
-      {/* The requested analogy, called out separately since it's the
-          single most useful mental model for a beginner. */}
-      <div className="mt-6 rounded-2xl border border-signal-cyan/30 bg-signal-cyan/5 p-5">
-        <p className="font-mono text-[11px] uppercase tracking-wider text-signal-cyan">Think of it like a city map</p>
-        <p className="mt-2 text-sm leading-relaxed text-graphite">
-          Every word lives at a location. Words with similar meanings become neighbors. Words with different meanings
-          live in different neighborhoods entirely. The model doesn&apos;t see the word itself — only its coordinates
-          on this map.
+    <div className="mt-16 space-y-6">
+      <div>
+        <h3 className="text-2xl font-bold tracking-tight text-slate-900">What's actually happening here</h3>
+        <p className="mt-1.5 font-mono text-xs text-slate-400">
+          Eight short answers to the questions people usually have about embeddings — no heavy math required.
         </p>
       </div>
 
-      <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {/* City Map Analogy Banner */}
+      <motion.div 
+        initial={{ opacity: 0, y: 10 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        className="rounded-2xl border border-blue-100 bg-blue-50/40 p-5 shadow-sm"
+      >
+        <p className="font-mono text-[10px] font-bold uppercase tracking-widest text-blue-600">Think of it like a city map</p>
+        <p className="mt-2 text-sm leading-relaxed text-slate-600">
+          Every word lives at a location. Words with similar meanings become neighbors. Words with different meanings
+          live in different neighborhoods entirely. The model doesn't see the word itself — only its coordinates
+          on this map.
+        </p>
+      </motion.div>
+
+      {/* Grid Layout Matrix */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {CARDS.map((card, i) => (
           <motion.div
             key={card.title}
-            initial={{ opacity: 0, y: 10 }}
+            initial={{ opacity: 0, y: 15 }}
             whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-40px" }}
-            transition={{ duration: 0.4, delay: i * 0.04 }}
-            className="rounded-xl border border-graphite-dim bg-void-raised p-4"
+            viewport={{ once: true, margin: "-20px" }}
+            whileHover={{ y: -4, transition: { duration: 0.2 } }}
+            transition={{ duration: 0.4, delay: i * 0.03 }}
+            className="flex flex-col justify-between rounded-2xl border border-slate-100 bg-white p-5 shadow-sm transition-colors hover:border-slate-200"
           >
-            <span className="text-xl">{card.icon}</span>
-            <p className="mt-2 font-mono text-xs font-medium text-paper">{card.title}</p>
-            <p className="mt-1.5 text-xs leading-relaxed text-graphite">{card.body}</p>
+            <div className="space-y-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-50 text-xl border border-slate-100">
+                {card.icon}
+              </div>
+              <p className="font-bold text-sm text-slate-800 leading-tight">{card.title}</p>
+              <p className="text-xs leading-relaxed text-slate-400">{card.body}</p>
+            </div>
           </motion.div>
         ))}
       </div>

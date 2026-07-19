@@ -254,3 +254,31 @@ class PositionInfo(BaseModel):
 
 class PositionalEncodingResponse(BaseModel):
     positions: List[PositionInfo]
+
+
+class AttentionMathRequest(BaseModel):
+    """
+    Powers the "click a token to see its attention math breakdown"
+    feature: real numbers pulled directly from the model at each stage of
+    computing one query token's attention distribution, not illustrative
+    fake ones.
+    """
+    prompt: str = Field(..., min_length=1, max_length=512)
+    model: str = Field(default="gpt2")
+    layer: int = Field(..., ge=0)
+    head: int = Field(..., ge=0)
+    query_index: int = Field(..., ge=0)
+
+
+class AttentionMathStep(BaseModel):
+    key_token_text: str
+    key_index: int
+    raw_dot_product: float   # q . k, before any scaling
+    scaled_score: float      # after /sqrt(d_head) and causal masking (real model value)
+    softmax_weight: float    # final attention weight (real model value)
+
+
+class AttentionMathResponse(BaseModel):
+    query_token_text: str
+    query_index: int
+    steps: List[AttentionMathStep]

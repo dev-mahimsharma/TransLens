@@ -1,0 +1,6 @@
+/* Append to your existing app/globals.css — these are the only rules
+   ChapterShell/ChapterRenderer rely on beyond your existing token classes. */
+
+.prose-translens strong { color: theme('colors.paper'); font-weight: 600; }
+.prose-translens a:not([class]) { color: theme('colors.signal.cyan'); text-decoration: underline; text-underline-offset: 2px; }
+.prose-translens code { background: theme('colors.slate.50'); padding: 0.1em 0.4em; border-radius: 4px; font-family: var(--font-jetbrains-mono); font-size: 0.85em; }

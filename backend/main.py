@@ -30,6 +30,8 @@ from schemas import (
     EmbeddingLookupResponse,
     PositionalEncodingRequest,
     PositionalEncodingResponse,
+    AttentionMathRequest,
+    AttentionMathResponse,
 )
 from model_service import ModelService, MODEL_REGISTRY
 from explanation_service import ExplanationService
@@ -160,6 +162,17 @@ def positional_encoding(req: PositionalEncodingRequest):
     svc = get_service(req.model)
     try:
         return svc.get_positional_encoding(req.text)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/pipeline/attention_math", response_model=AttentionMathResponse)
+def attention_math(req: AttentionMathRequest):
+    svc = get_service(req.model)
+    try:
+        return svc.get_attention_math(
+            prompt=req.prompt, layer=req.layer, head=req.head, query_index=req.query_index
+        )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

@@ -1,5 +1,7 @@
 "use client";
 
+import { motion } from "framer-motion";
+
 interface GuideRow {
   label: string;
   explanation: string;
@@ -34,20 +36,36 @@ const ROWS: GuideRow[] = [
 
 export function HowToReadGuide() {
   return (
-    <div className="mt-12 rounded-2xl border border-graphite-dim bg-void-raised p-6">
-      <p className="font-mono text-[11px] uppercase tracking-wider text-signal-cyan">How to Read This Visualization</p>
-      <p className="mt-2 max-w-lg text-sm text-graphite">
-        Everything on screen is a simplification built for human eyes — here&apos;s exactly what each part stands for, and what it leaves out.
-      </p>
+    <motion.div 
+      initial={{ opacity: 0 }}
+      whileInView={{ opacity: 1 }}
+      viewport={{ once: true }}
+      className="mt-12 rounded-3xl border border-slate-100 bg-white p-8 shadow-sm space-y-6"
+    >
+      <div>
+        <p className="font-mono text-[15px] font-bold uppercase tracking-widest text-blue-600 flex justify-center">How to Read This Visualization</p>
+        <p className="mt-1.5 text-sm flex justify-center text-slate-500 max-w-2xl leading-relaxed">
+          Everything on screen is a simplification built for human eyes — here's exactly what each part stands for, and what it leaves out.
+        </p>
+      </div>  
 
-      <dl className="mt-5 grid grid-cols-1 gap-x-8 gap-y-4 sm:grid-cols-2">
-        {ROWS.map((row) => (
-          <div key={row.label}>
-            <dt className="font-mono text-xs font-medium text-paper">{row.label}</dt>
-            <dd className="mt-1 text-xs leading-relaxed text-graphite">{row.explanation}</dd>
-          </div>
+      <hr className="border-slate-100" />
+
+      <dl className="grid grid-cols-1 gap-x-12 gap-y-6 sm:grid-cols-2">
+        {ROWS.map((row, idx) => (
+          <motion.div 
+            key={row.label}
+            initial={{ opacity: 0, x: -5 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: idx * 0.04 }}
+            className="space-y-1"
+          >
+            <dt className="text-sm font-bold text-slate-800">{row.label}</dt>
+            <dd className="text-xs leading-relaxed text-slate-400">{row.explanation}</dd>
+          </motion.div>
         ))}
       </dl>
-    </div>
+    </motion.div>
   );
 }
