@@ -10,7 +10,7 @@ import { ExplanationPanel } from "@/components/pipeline/ExplanationPanel";
 import { BeforeAfterToggle } from "@/components/pipeline/BeforeAfterToggle";
 import { TokenizationView } from "@/components/stages/tokenization/TokenizationView";
 import { CustomTokenizationView } from "@/components/stages/tokenization/CustomTokenizationView";
-import { EmbeddingsView } from "@/components/stages/embeddings/EmbeddingsView";
+import { EmbeddingView } from "@/components/stages/embeddings/EmbeddingsView";
 import { OriginalEmbeddingsView } from "@/components/original/OriginalEmbeddingsView";
 import { PositionalEncodingView } from "@/components/stages/positional-encoding/PositionalEncodingView";
 import { AttentionView } from "@/components/stages/attention/AttentionView";
@@ -79,7 +79,7 @@ export default function PipelinePage() {
         {activeStage === "tokenization" &&
           (isOriginal ? <TokenizationView /> : <CustomTokenizationView />)}
         {activeStage === "embeddings" &&
-          (isOriginal ? <OriginalEmbeddingsView /> : <EmbeddingsView />)}
+          (isOriginal ? <OriginalEmbeddingsView /> : <EmbeddingView />)}
         {activeStage === "positional_encoding" && <PositionalEncodingView />}
         {activeStage === "attention" &&
           (isOriginal ? <OriginalAttentionView /> : <AttentionView />)}
