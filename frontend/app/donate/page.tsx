@@ -3,9 +3,17 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { ArrowLeft, ShieldCheck, Heart } from 'lucide-react';
+import { ArrowLeft, Heart } from 'lucide-react';
+import { StripeBadge } from '@/components/donate/StripeBadge';
+import { DonationImpact } from '@/components/donate/DonationImpact';
 
-const PRESETS = [5, 10, 25, 50, 100];
+const PRESETS = [
+  { amount: 5, label: 'Buy us a coffee' },
+  { amount: 10, label: 'Most chosen' },
+  { amount: 25, label: 'Power user' },
+  { amount: 50, label: 'Legend' },
+  { amount: 100, label: 'Absolute unit' },
+];
 
 export default function DonatePage() {
   const [selected, setSelected] = useState(10);
@@ -51,32 +59,35 @@ export default function DonatePage() {
           Every dollar you give funds <span className="text-ember">this website — nothing else.</span>
         </h1>
         <p className="mx-auto mt-4 max-w-lg text-[15px] leading-relaxed text-graphite">
-          TransLens runs a real GPT-2 model live for every visitor, which costs real hosting and compute time. Your
-          donation goes directly toward keeping the servers running, the live model online, and the site free and
-          ad-free for the next student who finds it — not toward anything else.
+          You just read something free. Someone made that possible for you before you ever showed up — the servers,
+          the live GPT-2 model, the hosting, all paid for in advance, on trust. If this site helped you understand
+          something, this is your chance to be that person for the next visitor.
         </p>
       </motion.div>
 
-      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="surface-card mt-10 rounded-2xl bg-white p-6 sm:p-8">
+      <DonationImpact />
+
+      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="surface-card mt-8 rounded-2xl bg-white p-6 sm:p-8">
         <p className="mb-3 font-mono text-[11px] uppercase tracking-wide text-graphite">Choose an amount</p>
         <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
           {PRESETS.map((p) => (
             <button
-              key={p}
+              key={p.amount}
               onClick={() => {
-                setSelected(p);
+                setSelected(p.amount);
                 setCustom('');
               }}
-              className={`rounded-lg border px-3 py-2.5 text-sm font-semibold transition-colors ${
-                !custom && selected === p ? 'border-ember bg-ember text-white' : 'border-graphite-dim text-paper hover:border-ember/50'
+              className={`flex flex-col items-center gap-0.5 rounded-lg border px-2 py-2.5 transition-colors ${
+                !custom && selected === p.amount ? 'border-ember bg-ember text-white' : 'border-graphite-dim text-paper hover:border-ember/50'
               }`}
             >
-              ${p}
+              <span className="text-sm font-semibold">${p.amount}</span>
+              <span className={`text-[9.5px] leading-none ${!custom && selected === p.amount ? 'text-white/80' : 'text-graphite'}`}>{p.label}</span>
             </button>
           ))}
         </div>
 
-        <div className="mt-3">
+        <div className="mt-4">
           <label className="mb-1.5 block font-mono text-[11px] uppercase tracking-wide text-graphite">Or enter a custom amount</label>
           <div className="flex items-center gap-2 rounded-lg border border-graphite-dim px-3 py-2 focus-within:border-ember">
             <span className="text-graphite">$</span>
@@ -102,10 +113,14 @@ export default function DonatePage() {
           {loading ? 'Redirecting to Stripe…' : `Donate $${custom || selected}`}
         </button>
 
-        <p className="mt-4 flex items-center justify-center gap-1.5 font-mono text-[11px] text-graphite">
-          <ShieldCheck className="h-3.5 w-3.5" /> Processed securely by Stripe. We never see or store your card details.
-        </p>
+        <div className="mt-6 flex justify-center">
+          <StripeBadge />
+        </div>
       </motion.div>
+
+      <p className="mt-8 text-center text-[13px] italic text-graphite">
+        Whatever you can give — thank you. Genuinely.
+      </p>
     </main>
   );
 }

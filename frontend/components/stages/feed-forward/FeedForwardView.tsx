@@ -4,6 +4,10 @@ import { useEffect, useState, useMemo } from "react";
 import { usePipelineStore } from "@/lib/store/usePipelineStore";
 import { modelAdapter, type LayerDetailResponse } from "@/lib/engine/modelAdapter";
 import { STAGE_EXPLANATIONS } from "@/lib/content/explanations";
+import { FeedForwardMattersSection } from "./FeedForwardMattersSection";
+import { FeedForwardEducationCards } from "./FeedForwardEducationCards";
+import { FeedForwardMisconception } from "./FeedForwardMisconception";
+import { FeedForwardSummaryCard } from "./FeedForwardSummaryCard";
 
 const NUM_LAYERS = 12;
 
@@ -78,20 +82,28 @@ export function FeedForwardView() {
   }, [currentTokenActivations]);
 
   return (
-    <section className="py-12 flex flex-col items-center w-full max-w-5xl mx-auto">
+    <section className="mx-auto flex w-full max-w-5xl flex-col items-center py-12">
       {/* Header */}
-      <div className="mb-10 text-center flex flex-col items-center">
-        <h2 className="font-display text-3xl text-paper">Feed-Forward Network</h2>
-        <p className="mt-4 max-w-2xl text-base text-graphite leading-relaxed">
+      <div className="mb-10 flex flex-col items-center text-center">
+        <span className="inline-block rounded-full bg-signal-cyan/10 px-3 py-1 font-mono text-[11px] font-medium uppercase tracking-wider text-signal-cyan">
+          Step 5 of the Transformer Pipeline
+        </span>
+        <h2 className="mt-4 font-display text-4xl font-semibold text-paper">Feed-Forward Network</h2>
+        <p className="mt-4 max-w-2xl text-base leading-relaxed text-graphite">
           {STAGE_EXPLANATIONS.feed_forward}
         </p>
         <p className="mt-4 text-sm text-graphite">
-          <strong>How to explore:</strong> Select a token below to watch it travel through this layer's neural network. Hover over the glowing neurons to see what specific linguistic features they learned to detect!
+          <strong>How to explore:</strong> Select a token below to watch it travel through this layer&apos;s neural network. Hover over the glowing neurons to see what specific linguistic features they learned to detect!
         </p>
       </div>
 
+      {/* Opening story beat */}
+      <div className="mb-4 w-full">
+        <FeedForwardMattersSection />
+      </div>
+
       {/* Controls */}
-      <div className="mb-12 flex flex-wrap items-center justify-center gap-6 w-full">
+      <div className="mb-12 mt-12 flex w-full flex-wrap items-center justify-center gap-6">
         <div className="flex items-center gap-3 rounded-full border border-graphite-dim bg-void-raised px-4 py-2 shadow-sm">
           <span className="font-mono text-xs uppercase tracking-wider text-graphite">Layer</span>
           <button onClick={() => setLayer(Math.max(0, layer - 1))} className="font-mono text-signal-cyan hover:text-paper transition-colors">−</button>
@@ -123,117 +135,128 @@ export function FeedForwardView() {
           <p className="font-mono text-xs text-graphite uppercase tracking-wider">Simulating Neural Activations...</p>
         </div>
       )}
-      
+
       {error && <p className="font-mono text-xs text-ember my-10">{error}</p>}
 
       {/* Main Visualization Layout */}
       {detail && !isLoading && currentTokenActivations && (
-        <div className="w-full flex flex-col items-center animate-in fade-in slide-in-from-bottom-4">
-          
-          {/* Stage 1: Input Vector */}
-          <div className="flex flex-col items-center group">
-            <p className="font-mono text-[10px] uppercase tracking-wider text-graphite mb-2">Input Vector</p>
-            <div className="px-8 py-3 rounded-xl bg-gradient-to-r from-void to-void-raised border border-graphite-dim shadow-inner text-center min-w-[200px]">
-              <span className="font-mono text-lg text-signal-cyan font-semibold block mb-1">
-                &ldquo;{tokens[selectedTokenIndex]?.text.trim() || "␣"}&rdquo;
-              </span>
-              <span className="font-mono text-[10px] text-graphite">Dimensions: 768</span>
-            </div>
-            
-            {/* Arrow Down */}
-            <div className="h-10 w-px bg-gradient-to-b from-graphite-dim to-signal-cyan/50 my-2 relative">
-              <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-signal-cyan/50" />
-            </div>
-          </div>
+        <>
+          <h3 className="mb-8 text-center font-display text-2xl text-paper">Watch a token pass through this layer</h3>
 
-          {/* Stage 2: Expansion Layer (Grid of Neurons) */}
-          <div className="w-full max-w-4xl p-8 rounded-2xl bg-void-raised border border-graphite-dim shadow-lg relative">
-            <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-void border border-graphite-dim px-4 py-1 rounded-full shadow-sm">
-              <span className="font-mono text-[10px] uppercase tracking-wider text-signal-cyan font-bold">Expansion Layer (GELU)</span>
-            </div>
-            <p className="font-mono text-xs text-graphite text-center mb-6">
-              The token expands into a 3072-dimensional space, triggering specialized neurons. Only the most active are shown here.
-            </p>
+          <div className="w-full flex flex-col items-center animate-in fade-in slide-in-from-bottom-4">
 
-            <div className="flex flex-wrap justify-center gap-3">
-              {currentTokenActivations.top_neurons.map((neuron) => {
-                const isHovered = hoveredNeuron === neuron.neuron_index;
-                const widthPct = (Math.abs(neuron.post_activation) / maxMag) * 100;
-                
-                // Color intensity based on post_activation strength
-                const opacity = Math.max(0.2, widthPct / 100);
-                
-                return (
-                  <div
-                    key={neuron.neuron_index}
-                    onMouseEnter={() => setHoveredNeuron(neuron.neuron_index)}
-                    onMouseLeave={() => setHoveredNeuron(null)}
-                    className={`relative cursor-pointer flex flex-col items-center justify-end w-14 h-24 rounded-lg border transition-all duration-300 ${
-                      isHovered ? "border-signal-cyan bg-signal-cyan/10 scale-110 z-10 shadow-[0_0_15px_rgba(56,189,248,0.4)]" : "border-graphite-dim bg-void"
-                    }`}
-                  >
-                    <span className="font-mono text-[9px] text-graphite absolute top-2">#{neuron.neuron_index}</span>
-                    <div className="w-full px-2 flex justify-center pb-2">
-                      <div 
-                        className="w-full rounded-sm bg-signal-cyan transition-all duration-500 ease-out shadow-[0_0_10px_rgba(56,189,248,0.5)]"
-                        style={{ height: `${Math.max(4, widthPct)}%`, opacity: opacity }}
-                      />
+            {/* Stage 1: Input Vector */}
+            <div className="flex flex-col items-center group">
+              <p className="font-mono text-[10px] uppercase tracking-wider text-graphite mb-2">Input Vector</p>
+              <div className="px-8 py-3 rounded-xl bg-gradient-to-r from-void to-void-raised border border-graphite-dim shadow-inner text-center min-w-[200px]">
+                <span className="font-mono text-lg text-signal-cyan font-semibold block mb-1">
+                  &ldquo;{tokens[selectedTokenIndex]?.text.trim() || "␣"}&rdquo;
+                </span>
+                <span className="font-mono text-[10px] text-graphite">Dimensions: 768</span>
+              </div>
+
+              {/* Arrow Down */}
+              <div className="h-10 w-px bg-gradient-to-b from-graphite-dim to-signal-cyan/50 my-2 relative">
+                <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-signal-cyan/50" />
+              </div>
+            </div>
+
+            {/* Stage 2: Expansion Layer (Grid of Neurons) */}
+            <div className="w-full max-w-4xl p-8 rounded-2xl bg-void-raised border border-graphite-dim shadow-lg relative">
+              <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-void border border-graphite-dim px-4 py-1 rounded-full shadow-sm">
+                <span className="font-mono text-[10px] uppercase tracking-wider text-signal-cyan font-bold">Expansion Layer (GELU)</span>
+              </div>
+              <p className="font-mono text-xs text-graphite text-center mb-6">
+                The token expands into a 3072-dimensional space, triggering specialized neurons. Only the most active are shown here.
+              </p>
+
+              <div className="flex flex-wrap justify-center gap-3">
+                {currentTokenActivations.top_neurons.map((neuron) => {
+                  const isHovered = hoveredNeuron === neuron.neuron_index;
+                  const widthPct = (Math.abs(neuron.post_activation) / maxMag) * 100;
+
+                  // Color intensity based on post_activation strength
+                  const opacity = Math.max(0.2, widthPct / 100);
+
+                  return (
+                    <div
+                      key={neuron.neuron_index}
+                      onMouseEnter={() => setHoveredNeuron(neuron.neuron_index)}
+                      onMouseLeave={() => setHoveredNeuron(null)}
+                      className={`relative cursor-pointer flex flex-col items-center justify-end w-14 h-24 rounded-lg border transition-all duration-300 ${
+                        isHovered ? "border-signal-cyan bg-signal-cyan/10 scale-110 z-10 shadow-[0_0_15px_rgba(56,189,248,0.4)]" : "border-graphite-dim bg-void"
+                      }`}
+                    >
+                      <span className="font-mono text-[9px] text-graphite absolute top-2">#{neuron.neuron_index}</span>
+                      <div className="w-full px-2 flex justify-center pb-2">
+                        <div
+                          className="w-full rounded-sm bg-signal-cyan transition-all duration-500 ease-out shadow-[0_0_10px_rgba(56,189,248,0.5)]"
+                          style={{ height: `${Math.max(4, widthPct)}%`, opacity: opacity }}
+                        />
+                      </div>
                     </div>
+                  );
+                })}
+              </div>
+
+              {/* Interactive Tooltip Card inside Expansion Layer */}
+              <div className="mt-8 h-24 flex items-center justify-center">
+                {hoveredNeuron !== null ? (
+                  <div className="bg-void border border-signal-cyan/40 px-6 py-4 rounded-xl shadow-[0_0_20px_rgba(56,189,248,0.15)] animate-in fade-in zoom-in-95 max-w-lg text-center">
+                    <p className="font-mono text-[10px] text-signal-cyan uppercase tracking-wider mb-2">What did it learn?</p>
+                    <p className="text-sm text-paper leading-snug">
+                      {getNeuronExplanation(hoveredNeuron, tokens[selectedTokenIndex]?.text || "")}
+                    </p>
                   </div>
-                );
-              })}
-            </div>
-
-            {/* Interactive Tooltip Card inside Expansion Layer */}
-            <div className="mt-8 h-24 flex items-center justify-center">
-              {hoveredNeuron !== null ? (
-                <div className="bg-void border border-signal-cyan/40 px-6 py-4 rounded-xl shadow-[0_0_20px_rgba(56,189,248,0.15)] animate-in fade-in zoom-in-95 max-w-lg text-center">
-                  <p className="font-mono text-[10px] text-signal-cyan uppercase tracking-wider mb-2">What did it learn?</p>
-                  <p className="text-sm text-paper leading-snug">
-                    {getNeuronExplanation(hoveredNeuron, tokens[selectedTokenIndex]?.text || "")}
+                ) : (
+                  <p className="font-mono text-xs text-graphite/50 italic animate-pulse">
+                    Hover over a neuron to see its semantic job...
                   </p>
-                </div>
-              ) : (
-                <p className="font-mono text-xs text-graphite/50 italic animate-pulse">
-                  Hover over a neuron to see its semantic job...
-                </p>
-              )}
-            </div>
-          </div>
-
-          {/* Stage 3: Projection Layer */}
-          <div className="flex flex-col items-center">
-            {/* Arrow Down */}
-            <div className="h-10 w-px bg-gradient-to-b from-signal-cyan/50 to-graphite-dim my-2 relative">
-              <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-graphite-dim" />
+                )}
+              </div>
             </div>
 
-            <p className="font-mono text-[10px] uppercase tracking-wider text-graphite mb-2 mt-2">Projection Layer</p>
-            <div className="px-8 py-3 rounded-xl bg-void-raised border border-graphite-dim shadow-sm text-center min-w-[200px]">
-              <span className="font-mono text-xs text-paper block mb-1">
-                Compressing back to 768 dims
-              </span>
-              <span className="font-mono text-[10px] text-graphite">Knowledge Added ✓</span>
-            </div>
-            
-            {/* Arrow Down */}
-            <div className="h-8 w-px bg-graphite-dim my-2 relative">
-              <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-graphite-dim" />
-            </div>
-          </div>
+            {/* Stage 3: Projection Layer */}
+            <div className="flex flex-col items-center">
+              {/* Arrow Down */}
+              <div className="h-10 w-px bg-gradient-to-b from-signal-cyan/50 to-graphite-dim my-2 relative">
+                <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-graphite-dim" />
+              </div>
 
-          {/* Output Vector */}
-          <div className="flex flex-col items-center">
-            <p className="font-mono text-[10px] uppercase tracking-wider text-graphite mb-2">Updated Token Vector</p>
-            <div className="px-8 py-4 rounded-xl bg-black border border-signal-cyan/30 shadow-[0_0_25px_rgba(56,189,248,0.1)] text-center min-w-[200px]">
-              <span className="font-mono text-lg text-white font-semibold block mb-1">
-                &ldquo;{tokens[selectedTokenIndex]?.text.trim() || "␣"}&rdquo;
-              </span>
-              <span className="font-mono text-[10px] text-signal-cyan">Enriched with context</span>
+              <p className="font-mono text-[10px] uppercase tracking-wider text-graphite mb-2 mt-2">Projection Layer</p>
+              <div className="px-8 py-3 rounded-xl bg-void-raised border border-graphite-dim shadow-sm text-center min-w-[200px]">
+                <span className="font-mono text-xs text-paper block mb-1">
+                  Compressing back to 768 dims
+                </span>
+                <span className="font-mono text-[10px] text-graphite">Knowledge Added ✓</span>
+              </div>
+
+              {/* Arrow Down */}
+              <div className="h-8 w-px bg-graphite-dim my-2 relative">
+                <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-graphite-dim" />
+              </div>
+            </div>
+
+            {/* Output Vector */}
+            <div className="flex flex-col items-center">
+              <p className="font-mono text-[10px] uppercase tracking-wider text-graphite mb-2">Updated Token Vector</p>
+              <div className="px-8 py-4 rounded-xl bg-black border border-signal-cyan/30 shadow-[0_0_25px_rgba(56,189,248,0.1)] text-center min-w-[200px]">
+                <span className="font-mono text-lg text-white font-semibold block mb-1">
+                  &ldquo;{tokens[selectedTokenIndex]?.text.trim() || "␣"}&rdquo;
+                </span>
+                <span className="font-mono text-[10px] text-signal-cyan">Enriched with context</span>
+              </div>
             </div>
           </div>
-        </div>
+        </>
       )}
+
+      {/* New content sections */}
+      <div className="w-full">
+        <FeedForwardEducationCards />
+        <FeedForwardMisconception />
+        <FeedForwardSummaryCard />
+      </div>
 
       {/* Navigation */}
       <div className="mt-16 w-full flex justify-between items-center border-t border-graphite-dim pt-8 px-4">

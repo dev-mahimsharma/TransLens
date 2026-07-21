@@ -5,7 +5,10 @@ import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { usePipelineStore } from "@/lib/store/usePipelineStore";
 import { softmaxWithTemperature, weightedRandomIndex } from "@/lib/engine/sampling";
-import { STAGE_EXPLANATIONS } from "@/lib/content/explanations";
+import { SamplingMattersSection } from "./SamplingMattersSection";
+import { SamplingEducationCards } from "./SamplingEducationCards";
+import { SamplingMisconception } from "./samplingMisconception";
+import { SamplingSummaryCard } from "./samplingSummaryCard";
 
 /**
  * Final stage: turns logits into an actual next token. This is where
@@ -67,23 +70,32 @@ export function SamplingView() {
 
   return (
     <section className="py-10">
-      <div className="mb-12">
-        <h2 className="font-display text-2xl text-paper text-center">Sampling</h2>
-        
-        <div className="mt-6 flex flex-col items-center max-w-4xl mx-auto text-sm text-graphite">
+      <div className="mb-12 flex flex-col items-center text-center">
+        <span className="inline-block rounded-full bg-signal-violet/10 px-3 py-1 font-mono text-[11px] font-medium uppercase tracking-wider text-signal-violet">
+          Step 7 of the Transformer Pipeline
+        </span>
+        <h2 className="mt-4 font-display text-4xl font-semibold text-paper">Sampling</h2>
+
+        <div className="mx-auto mt-6 flex max-w-4xl flex-col items-center text-sm text-graphite">
           <p className="w-full text-center">
             The model doesn't pick one fixed next word — it assigns a probability to every possible next word, then rolls the dice according to those odds.
           </p>
-          <div className="flex w-full mt-6 justify-between gap-12">
-            <div className="w-1/2 pl-6 border-l-2 border-graphite-dim">
+          <div className="mt-6 flex w-full justify-between gap-12">
+            <div className="w-1/2 border-l-2 border-graphite-dim pl-6">
               Temperature controls how bold that roll is: low temperature almost always picks the most likely word; high temperature is willing to gamble on surprising ones.
             </div>
-            <div className="w-1/2 pr-6 text-right border-r-2 border-graphite-dim">
+            <div className="w-1/2 border-r-2 border-graphite-dim pr-6 text-right">
               Top-K limits the choices to only the K most probable words, guaranteeing the model never hallucinates a wildly unlikely choice.
             </div>
           </div>
         </div>
       </div>
+
+      <div className="mb-14">
+        <SamplingMattersSection />
+      </div>
+
+      <h3 className="mb-6 text-center font-display text-2xl text-paper">Turn the dials yourself</h3>
 
       {/* Controls */}
       <div className="mb-8 flex flex-wrap justify-center gap-8">
@@ -126,8 +138,10 @@ export function SamplingView() {
         </div>
       </div>
 
+      <h3 className="mb-4 text-center font-display text-lg text-paper">Live probability distribution</h3>
+
       {/* Probability bars */}
-      <div className="max-w-xl mx-auto space-y-2 w-full">
+      <div className="mx-auto w-full max-w-xl space-y-2">
         {compareEnabled && ghostByTokenId && (
           <p className="mb-1 font-mono text-[10px] text-graphite">
             Faint bars show probabilities before your last edit
@@ -173,7 +187,7 @@ export function SamplingView() {
         })}
       </div>
 
-      <p className="max-w-xl mx-auto mt-6 text-center font-mono text-[10px] leading-relaxed text-graphite/70 italic">
+      <p className="mx-auto mt-6 max-w-xl text-center font-mono text-[10px] italic leading-relaxed text-graphite/70">
         * Disclaimer: Because the model "rolls a dice" based on probabilities, it will occasionally pick a lower-probability token instead of the #1 favorite. This ensures creative diversity. Drop the Temperature to 0.1 to force Greedy Decoding if you always want the top prediction!
       </p>
 
@@ -193,7 +207,7 @@ export function SamplingView() {
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
-            className="mt-6 max-w-xl mx-auto w-full rounded-2xl border border-signal-violet/40 bg-void-raised p-5"
+            className="mx-auto mt-6 w-full max-w-xl rounded-2xl border border-signal-violet/40 bg-void-raised p-5"
           >
             <p className="mb-1 font-mono text-xs uppercase tracking-wider text-graphite">
               Output
@@ -205,6 +219,10 @@ export function SamplingView() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <SamplingEducationCards />
+      <SamplingMisconception />
+      <SamplingSummaryCard />
 
       <div className="mt-12 flex justify-between">
         <button

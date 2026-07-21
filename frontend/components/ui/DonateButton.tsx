@@ -18,6 +18,7 @@ export function DonateButton() {
     setBurst(true);
     setRedirecting(true);
     setTimeout(() => router.push('/donate'), 550);
+    setTimeout(() => setRedirecting(false), 1800);
   }
 
   return (

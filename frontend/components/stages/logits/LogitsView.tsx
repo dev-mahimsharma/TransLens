@@ -4,6 +4,11 @@ import { useMemo } from "react";
 import { motion } from "framer-motion";
 import { usePipelineStore } from "@/lib/store/usePipelineStore";
 import { STAGE_EXPLANATIONS } from "@/lib/content/explanations";
+import { LogitsMattersSection } from "./LogitsMattersSection";
+import { LogitsScoreBoard } from "./LogitsScoreboard";
+import { LogitsEducationCards } from "./LogitsEducationCards";
+import { LogitsMisconception } from "./LogitsMisconception";
+import { LogitsSummaryCard } from "./LogitsSummaryCard";
 
 export function LogitsView() {
   const snapshot = usePipelineStore((s) => s.activeSnapshot());
@@ -18,18 +23,17 @@ export function LogitsView() {
 
   if (!snapshot || predictions.length === 0) return null;
 
-  const range = maxLogit - minLogit || 1;
-  // Assuming the predictions are sorted descending by logit score.
-  const topLogitId = predictions[0]?.token_id;
-
   return (
     <section className="py-10">
       <div className="mb-12 flex flex-col items-center text-center">
-        <h2 className="font-display text-3xl text-paper">Logits</h2>
+        <span className="inline-block rounded-full bg-signal-cyan/10 px-3 py-1 font-mono text-[11px] font-medium uppercase tracking-wider text-signal-cyan">
+          Step 6 of the Transformer Pipeline
+        </span>
+        <h2 className="mt-4 font-display text-4xl font-semibold text-paper">Logits</h2>
         <p className="mt-4 max-w-2xl text-base text-graphite">
           {STAGE_EXPLANATIONS.logits}
         </p>
-        
+
         {/* Info Card: What are Logits? */}
         <div className="mt-8 w-full max-w-2xl rounded-xl border border-graphite-dim bg-void-raised p-5 text-left shadow-[0_4px_24px_rgba(0,0,0,0.1)]">
           <p className="font-mono text-[11px] uppercase tracking-wider text-signal-cyan mb-2">What are Logits?</p>
@@ -39,50 +43,12 @@ export function LogitsView() {
         </div>
       </div>
 
-      <div className="mx-auto max-w-2xl space-y-2.5">
-        {predictions.map((pred) => {
-          const zeroPos = (-minLogit / range) * 100;
-          const barPos = (pred.logit / range) * 100;
-          const isPositive = pred.logit >= 0;
-          const isTop = pred.token_id === topLogitId;
-
-          return (
-            <div key={pred.token_id} className="flex items-center gap-4">
-              <div className="w-24 shrink-0 text-right flex flex-col items-end">
-                <span className={`block font-mono text-sm truncate w-full ${isTop ? "text-signal-cyan font-semibold" : "text-paper"}`}>
-                  {pred.token_text.trim() || "␣"}
-                </span>
-                {isTop && (
-                  <span className="mt-0.5 inline-block rounded bg-signal-cyan/10 px-1.5 py-0.5 font-mono text-[8px] uppercase tracking-wider text-signal-cyan">
-                    Top
-                  </span>
-                )}
-              </div>
-              
-              <div className="relative h-5 flex-1 rounded bg-void-raised">
-                <div
-                  className="absolute top-0 z-10 h-full w-px bg-graphite/40"
-                  style={{ left: `${zeroPos}%` }}
-                />
-                <motion.div
-                  className={`absolute top-0 h-full rounded-sm ${
-                    isTop ? "bg-signal-cyan" : isPositive ? "bg-signal-cyan/60" : "bg-ember/70"
-                  }`}
-                  initial={false}
-                  animate={{
-                    left: isPositive ? `${zeroPos}%` : `${zeroPos + barPos}%`,
-                    width: `${Math.abs(barPos)}%`,
-                  }}
-                  transition={{ duration: 0.3 }}
-                />
-              </div>
-              <span className={`w-16 shrink-0 font-mono text-xs ${isTop ? "text-signal-cyan font-medium" : "text-graphite"}`}>
-                {pred.logit.toFixed(2)}
-              </span>
-            </div>
-          );
-        })}
+      <div className="mb-14">
+        <LogitsMattersSection />
       </div>
+
+      <h3 className="mb-6 text-center font-display text-2xl text-paper">The scoreboard</h3>
+      <LogitsScoreBoard predictions={predictions} minLogit={minLogit} maxLogit={maxLogit} />
 
       {/* Comparison Card */}
       <div className="mx-auto mt-14 max-w-3xl rounded-xl border border-graphite-dim bg-void-raised p-6 shadow-sm">
@@ -119,10 +85,14 @@ export function LogitsView() {
           </div>
           <span className="hidden text-graphite sm:block">→</span>
           <span className="text-graphite sm:hidden">↓</span>
-          <div className="flex flex-col items-center rounded-lg border border-signal-cyan/30 bg-signal-cyan/5 px-4 py-2">
+          <motion.div
+            className="flex flex-col items-center rounded-lg border border-signal-cyan/30 bg-signal-cyan/5 px-4 py-2"
+            animate={{ boxShadow: ["0 0 0px rgba(37,99,235,0)", "0 0 16px rgba(37,99,235,0.35)", "0 0 0px rgba(37,99,235,0)"] }}
+            transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
+          >
             <span className="font-mono text-[10px] uppercase text-signal-cyan">Math</span>
             <span className="mt-1 font-mono text-sm text-signal-cyan">Softmax Function</span>
-          </div>
+          </motion.div>
           <span className="hidden text-graphite sm:block">→</span>
           <span className="text-graphite sm:hidden">↓</span>
           <div className="flex flex-col items-center">
@@ -131,6 +101,10 @@ export function LogitsView() {
           </div>
         </div>
       </div>
+
+      <LogitsEducationCards />
+      <LogitsMisconception />
+      <LogitsSummaryCard />
 
       <div className="mt-12 flex justify-between">
         <button
